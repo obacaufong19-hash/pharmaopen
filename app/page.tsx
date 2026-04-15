@@ -1,9 +1,6 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { supabase } from './utils/supabase';
-
-type Location = { lat: number; lng: number } | null;
 
 interface Pharmacy {
   id: string;
@@ -19,16 +16,15 @@ export default function Home() {
   const [list, setList] = useState<Pharmacy[]>([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
-  const [userLoc, setUserLoc] = useState<Location>(null);
+  const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
     fetchPharmacies();
 
-    if (typeof window !== 'undefined' && navigator.geolocation) {
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => console.log("Location denied"),
-        { enableHighAccuracy: true }
+        () => console.log("Location denied")
       );
     }
 
@@ -38,9 +34,7 @@ export default function Home() {
       })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   async function fetchPharmacies() {
@@ -65,44 +59,29 @@ export default function Home() {
     <div className="max-w-3xl mx-auto p-4 bg-slate-50 min-h-screen">
       <header className="py-8 text-center">
         <h1 className="text-4xl font-black text-blue-800 tracking-tighter">Bula Health 🌴</h1>
-        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Fiji Pharmacy Tracker</p>
       </header>
 
       <div className="sticky top-2 z-20 mb-6 space-y-3">
         <input 
           type="text" 
           placeholder="Search pharmacies..." 
-          className="w-full p-5 rounded-2xl border-none shadow-xl focus:ring-2 focus:ring-blue-500 text-gray-700 bg-white"
+          className="w-full p-5 rounded-2xl border-none shadow-xl bg-white"
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-          {['All', 'Suva', 'Navua', 'Lami', 'Samabula'].map((city) => (
-            <button
-              key={city}
-              onClick={() => setFilter(city)}
-              className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${
-                filter === city ? 'bg-blue-600 text-white' : 'bg-white text-gray-500'
-              }`}
-            >
-              {city}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredList.map((p) => (
-          <div key={p.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-            <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+          <div key={p.id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+            <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase ${
               p.is_open ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
             }`}>
-              {p.is_open ? '● Open Now' : '○ Closed'}
+              {p.is_open ? '● Open' : '○ Closed'}
             </span>
             <h2 className="text-xl font-extrabold text-slate-900 mt-4">{p.name}</h2>
-            <p className="text-[11px] text-slate-400 font-medium mb-6">{p.address}</p>
+            <p className="text-[11px] text-slate-400 mb-6">{p.address}</p>
             <div className="flex gap-2">
               <a href={`tel:${p.phone_number}`} className="flex-1 bg-slate-900 text-white text-center py-4 rounded-2xl font-bold text-sm">Call</a>
-              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ' ' + p.address)}`} target="_blank" rel="noreferrer" className="flex-1 border-2 border-slate-100 text-slate-700 text-center py-4 rounded-2xl font-bold text-sm">Map</a>
             </div>
           </div>
         ))}
