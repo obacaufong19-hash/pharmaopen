@@ -7,13 +7,39 @@ export default function Home() {
   const [userLoc, setUserLoc] = useState(null);
 
   useEffect(() => {
-    // Get location for sorting
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (err) => console.log("Location denied"),
-      { enableHighAccuracy: true }
-    );
+    // 1. Define the async logic inside the effect
+    const init = async () => {
+      // Get location for sorting
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.log("Location denied"),
+        { enableHighAccuracy: true }
+      );
 
+      await fetchPharmacies();
+
+      // Enable Realtime updates
+      const channel = supabase.channel('realtime_pharmacies')
+        .on('postgres_changes', { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'pharmacies' 
+        }, () => fetchPharmacies())
+        .subscribe();
+
+      return channel;
+    };
+
+    // 2. Execute the logic
+    const channelPromise = init();
+
+    // 3. Proper Cleanup
+    return () => {
+      channelPromise.then(channel => {
+        if (channel) supabase.removeChannel(channel);
+      });
+    };
+  }, []);
     fetchPharmacies();
 
     // Enable Realtime updates
