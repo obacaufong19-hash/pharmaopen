@@ -1,13 +1,12 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '../utils/supabase'; // Fixed path to reach root utils
+import { supabase } from '../utils/supabase'; // Corrected path (one level up)
 
 function UpdateContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const token = searchParams.get('token');
-
   const [pharmacy, setPharmacy] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +36,7 @@ function UpdateContent() {
   };
 
   if (loading) return <div className="p-10 text-center">Verifying...</div>;
-  if (!pharmacy) return <div className="p-10 text-center text-red-500 font-bold uppercase tracking-widest">Invalid Token</div>;
+  if (!pharmacy) return <div className="p-10 text-center text-red-500 font-bold uppercase tracking-widest">Access Denied</div>;
 
   return (
     <div className="max-w-md mx-auto p-8 text-center bg-slate-900 min-h-screen text-white">
@@ -50,7 +49,7 @@ function UpdateContent() {
       >
         <span className="text-4xl font-black">{pharmacy.is_open ? 'OPEN' : 'CLOSED'}</span>
       </div>
-      <p className="mt-10 text-slate-400 text-xs tracking-widest uppercase">Tap to toggle status</p>
+      <p className="mt-10 text-slate-400 text-xs tracking-widest uppercase">Tap button to toggle status</p>
     </div>
   );
 }
