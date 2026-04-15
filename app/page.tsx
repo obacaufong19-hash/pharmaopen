@@ -22,27 +22,28 @@ export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [mounted, setMounted] = useState(false); // New Guard
+  const [mounted, setMounted] = useState(false);
+  const [connError, setConnError] = useState<string | null>(null);
 
   const fetchPharmacies = async () => {
     if (typeof window === 'undefined' || !navigator.onLine) return;
     setIsSyncing(true);
+    setConnError(null);
     try {
       const { data, error } = await supabase.from('pharmacies').select('*');
-      if (error) console.error("Supabase Error:", error.message);
+      if (error) throw error;
       if (data) setList(data as Pharmacy[]);
-    } catch (e) {
-      console.error("Fetch Catch:", e);
+    } catch (e: any) {
+      setConnError(e.message || "Could not connect to database");
     } finally {
       setTimeout(() => setIsSyncing(false), 600);
     }
   };
 
   useEffect(() => {
-    setMounted(true); // Signal that browser is ready
+    setMounted(true);
     setCurrentTime(new Date());
     fetchPharmacies();
-
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) setIsDarkMode(true);
     
@@ -63,8 +64,18 @@ export default function Home() {
     };
   }, []);
 
-  // Prevent any rendering until the component has "mounted" on the client
   if (!mounted) return null;
+
+  // FALLBACK UI: If Supabase fails, show this instead of a white/black screen
+  if (connError) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-10 text-center">
+        <h1 className="text-xl font-bold mb-4">Connection Issue</h1>
+        <p className="text-zinc-500 text-sm mb-6">{connError}</p>
+        <button onClick={() => window.location.reload()} className="bg-white text-black px-6 py-2 rounded-full font-bold">Try Again</button>
+      </div>
+    );
+  }
 
   const getClosingSnippet = (closingTime: string | null) => {
     if (!closingTime || !currentTime) return null;
@@ -90,7 +101,7 @@ export default function Home() {
 
   return (
     <div className={`${isDarkMode ? 'dark bg-black text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen font-sans transition-colors duration-300`}>
-      {!isOnline && <div className="bg-red-500 text-white text-[11px] font-bold py-2 text-center sticky top-0 z-50">No Internet Connection</div>}
+      {!isOnline && <div className="bg-red-500 text-white text-[11px] font-bold py-2 text-center sticky top-0 z-50">No Connection</div>}
 
       <div className="max-w-xl mx-auto p-5 pb-24">
         <header className="mb-6 flex justify-between items-end">
@@ -112,16 +123,12 @@ export default function Home() {
           <input 
             type="text" 
             placeholder="Search Pharmacies" 
-            className={`w-full p-4 rounded-xl border-none shadow-sm text-base ${isDarkMode ? 'bg-zinc-800 text-white placeholder:text-zinc-500' : 'bg-white text-black placeholder:text-gray-400'}`} 
+            className={`w-full p-4 rounded-xl border-none shadow-sm text-base ${isDarkMode ? 'bg-zinc-800 text-white' : 'bg-white text-black'}`} 
             onChange={(e) => setSearch(e.target.value)} 
           />
           <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
             {['All', 'Open', 'Suva', 'Lami', 'Navua'].map((cat) => (
-              <button 
-                key={cat} 
-                onClick={() => setFilter(cat)} 
-                className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap shadow-sm ${filter === cat ? 'bg-blue-600 text-white' : (isDarkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-white text-gray-500')}`}
-              >
+              <button key={cat} onClick={() => setFilter(cat)} className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap shadow-sm ${filter === cat ? 'bg-blue-600 text-white' : (isDarkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-white text-gray-500')}`}>
                 {cat}
               </button>
             ))}
@@ -131,16 +138,16 @@ export default function Home() {
         <div className="space-y-3">
           {filteredList.map((p) => {
             const closingSoon = p.is_open ? getClosingSnippet(p.closing_time) : null;
-            const waMessage = encodeURIComponent(`Bula ${p.name}, checking if you have a specific medicine in stock? Found you on Bula Health.`);
+            const waMessage = encodeURIComponent(`Bula ${p.name}, checking if you have a specific medicine in stock?`);
             
             return (
-              <div key={p.id} className={`p-5 rounded-2xl shadow-sm flex justify-between items-center active:opacity-80 transition-opacity ${isDarkMode ? 'bg-zinc-900' : 'bg-white'}`}>
+              <div key={p.id} className={`p-5 rounded-2xl shadow-sm flex justify-between items-center ${isDarkMode ? 'bg-zinc-900' : 'bg-white'}`}>
                 <div className="flex-1 pr-4">
                   <h2 className="text-lg font-bold tracking-tight">{p.name}</h2>
                   <p className="text-[13px] text-gray-500 font-medium leading-snug mb-3">{p.address}</p>
                   <div className="flex flex-wrap items-center gap-2">
                     <a href={`tel:${p.phone_number}`} className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2.5 py-1.5 rounded-lg">📞 Call</a>
-                    <a href={`https://wa.me/${p.phone_number.replace(/\s+/g, '')}?text=${waMessage}`} target="_blank" className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2.5 py-1.5 rounded-lg">💬 Check Stock</a>
+                    <a href={`https://wa.me/${p.phone_number.replace(/\s+/g, '')}?text=${waMessage}`} target="_blank" className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2.5 py-1.5 rounded-lg">💬 Stock</a>
                     {closingSoon && <span className="text-[10px] font-bold text-orange-500 bg-orange-500/10 px-2.5 py-1.5 rounded-lg animate-pulse">⏰ {closingSoon}</span>}
                   </div>
                 </div>
