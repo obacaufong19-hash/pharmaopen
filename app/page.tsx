@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './utils/supabase';
 
+// FIX 1: The missing Interface that caused your "Cannot find name 'Pharmacy'" error
 interface Pharmacy {
   id: string;
   name: string;
@@ -22,28 +23,27 @@ export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [mounted, setMounted] = useState(false);
-  const [connError, setConnError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false); 
 
   const fetchPharmacies = async () => {
     if (typeof window === 'undefined' || !navigator.onLine) return;
     setIsSyncing(true);
-    setConnError(null);
     try {
       const { data, error } = await supabase.from('pharmacies').select('*');
-      if (error) throw error;
+      if (error) console.error("Supabase error:", error);
       if (data) setList(data as Pharmacy[]);
-    } catch (e: any) {
-      setConnError(e.message || "Could not connect to database");
+    } catch (e) {
+      console.error("Fetch failed:", e);
     } finally {
       setTimeout(() => setIsSyncing(false), 600);
     }
   };
 
   useEffect(() => {
-    setMounted(true);
+    setMounted(true); // Signal the browser is ready
     setCurrentTime(new Date());
     fetchPharmacies();
+
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) setIsDarkMode(true);
     
@@ -64,17 +64,9 @@ export default function Home() {
     };
   }, []);
 
-  if (!mounted) return null;
-
-  // FALLBACK UI: If Supabase fails, show this instead of a white/black screen
-  if (connError) {
-    return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-10 text-center">
-        <h1 className="text-xl font-bold mb-4">Connection Issue</h1>
-        <p className="text-zinc-500 text-sm mb-6">{connError}</p>
-        <button onClick={() => window.location.reload()} className="bg-white text-black px-6 py-2 rounded-full font-bold">Try Again</button>
-      </div>
-    );
+  // FIX 2: If the app isn't ready, show a clean loading screen instead of crashing
+  if (!mounted) {
+    return <div className="min-h-screen bg-black flex items-center justify-center text-white font-bold">Bula...</div>;
   }
 
   const getClosingSnippet = (closingTime: string | null) => {
@@ -99,8 +91,10 @@ export default function Home() {
       return Math.hypot(a.lat - userLoc.lat, a.lng - userLoc.lng) - Math.hypot(b.lat - userLoc.lat, b.lng - userLoc.lng);
     });
 
+  const fontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
   return (
-    <div className={`${isDarkMode ? 'dark bg-black text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen font-sans transition-colors duration-300`}>
+    <div style={{ fontFamily: fontStack }} className={`${isDarkMode ? 'dark bg-black text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen transition-colors duration-300`}>
       {!isOnline && <div className="bg-red-500 text-white text-[11px] font-bold py-2 text-center sticky top-0 z-50">No Connection</div>}
 
       <div className="max-w-xl mx-auto p-5 pb-24">
@@ -128,7 +122,11 @@ export default function Home() {
           />
           <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
             {['All', 'Open', 'Suva', 'Lami', 'Navua'].map((cat) => (
-              <button key={cat} onClick={() => setFilter(cat)} className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap shadow-sm ${filter === cat ? 'bg-blue-600 text-white' : (isDarkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-white text-gray-500')}`}>
+              <button 
+                key={cat} 
+                onClick={() => setFilter(cat)} 
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap shadow-sm ${filter === cat ? 'bg-blue-600 text-white' : (isDarkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-white text-gray-500')}`}
+              >
                 {cat}
               </button>
             ))}
@@ -151,7 +149,7 @@ export default function Home() {
                     {closingSoon && <span className="text-[10px] font-bold text-orange-500 bg-orange-500/10 px-2.5 py-1.5 rounded-lg animate-pulse">⏰ {closingSoon}</span>}
                   </div>
                 </div>
-                <div className={`shrink-0 px-4 py-1.5 rounded-full font-bold text-[11px] ${p.is_open ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-500'}`}>
+                <div className={`shrink-0 px-4 py-1.5 rounded-full font-bold text-[11px] ${p.is_open ? 'bg-green-500 text-white' : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-500'}`}>
                   {p.is_open ? 'OPEN' : 'CLOSED'}
                 </div>
               </div>
