@@ -12,21 +12,17 @@ function UpdateForm() {
 
   useEffect(() => {
     setIsOnline(navigator.onLine);
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    const hO = () => setIsOnline(true);
+    const hF = () => setIsOnline(false);
+    window.addEventListener('online', hO);
+    window.addEventListener('offline', hF);
     
     async function verify() {
       const { data } = await supabase.from('pharmacies').select('*').eq('id', id).eq('update_token', token).single();
       if (data) setPharmacy(data);
     }
     if (id && token) verify();
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    return () => { window.removeEventListener('online', hO); window.removeEventListener('offline', hF); };
   }, [id, token]);
 
   const toggleStatus = async () => {
@@ -35,45 +31,41 @@ function UpdateForm() {
     const { error } = await supabase.from('pharmacies').update({ is_open: newStatus }).eq('id', id);
     if (!error) {
       setPharmacy({ ...pharmacy, is_open: newStatus });
-      if (navigator.vibrate) navigator.vibrate(50);
+      if (navigator.vibrate) navigator.vibrate(80); 
     }
   };
 
-  if (!pharmacy) return <div className="p-10 text-center text-white bg-slate-900 min-h-screen font-black">VALIDATING ACCESS...</div>;
+  if (!pharmacy) return <div className="p-10 text-center font-bold text-zinc-600 bg-black min-h-screen pt-40 tracking-widest uppercase text-xs">Verifying Access...</div>;
+
+  const fontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
   return (
-    <div className={`max-w-md mx-auto p-10 text-center transition-colors min-h-screen text-white font-sans ${isOnline ? 'bg-slate-900' : 'bg-red-950'}`}>
-      <div className="mb-12">
-        <h1 className="text-3xl font-black tracking-tight">{pharmacy.name}</h1>
-        <p className={`text-[10px] font-bold uppercase tracking-[0.3em] mt-3 ${isOnline ? 'text-green-500' : 'text-red-400'}`}>
-          {isOnline ? '● Ready to Update' : '⚠️ Offline - Connection Lost'}
+    <div style={{ fontFamily: fontStack }} className={`max-w-md mx-auto p-10 text-center transition-colors min-h-screen ${isOnline ? 'bg-black text-white' : 'bg-red-950 text-white'}`}>
+      <div className="mb-20">
+        <h1 className="text-3xl font-extrabold tracking-tight">{pharmacy.name}</h1>
+        <p className={`text-xs font-bold mt-2 uppercase tracking-[0.2em] ${isOnline ? 'text-zinc-500' : 'text-red-400'}`}>
+          {isOnline ? 'Cloud Sync Active' : 'Offline - Check Data'}
         </p>
       </div>
       
       <button 
         onClick={toggleStatus}
         disabled={!isOnline}
-        className={`w-64 h-64 mx-auto rounded-full flex flex-col items-center justify-center transition-all active:scale-90 border-[12px] ${!isOnline ? 'opacity-40 grayscale' : 'shadow-2xl'} ${
-          pharmacy.is_open 
-          ? 'bg-green-500 border-green-400 shadow-green-500/40' 
-          : 'bg-red-500 border-red-400 shadow-red-500/40'
+        className={`w-64 h-64 mx-auto rounded-full flex flex-col items-center justify-center transition-all active:scale-95 border-[10px] shadow-2xl ${!isOnline ? 'opacity-30' : ''} ${
+          pharmacy.is_open ? 'bg-green-500 border-green-400' : 'bg-zinc-800 border-zinc-700'
         }`}
       >
-        <span className="text-5xl font-black mb-1">{pharmacy.is_open ? 'OPEN' : 'CLOSED'}</span>
-        <span className="text-[10px] font-bold uppercase opacity-60 tracking-widest">Tap to Toggle</span>
+        <span className="text-5xl font-black">{pharmacy.is_open ? 'OPEN' : 'CLOSED'}</span>
+        <span className="text-[11px] font-bold opacity-60 mt-2">TAP TO TOGGLE</span>
       </button>
 
-      <div className="mt-16 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-        {isOnline ? 'Instantly visible to all users' : 'Please reconnect to save changes'}
-      </div>
+      <p className="mt-20 text-zinc-600 text-[11px] font-bold uppercase tracking-[0.3em]">
+        Status Syncs Instantly
+      </p>
     </div>
   );
 }
 
 export default function Page() {
-  return (
-    <Suspense fallback={<div className="bg-slate-900 min-h-screen" />}>
-      <UpdateForm />
-    </Suspense>
-  );
+  return <Suspense fallback={<div className="bg-black min-h-screen" />}><UpdateForm /></Suspense>;
 }
