@@ -11,61 +11,42 @@ function UpdateForm() {
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
-    setIsOnline(navigator.onLine);
-    const hO = () => setIsOnline(true);
-    const hF = () => setIsOnline(false);
-    window.addEventListener('online', hO);
-    window.addEventListener('offline', hF);
-    
     async function verify() {
       const { data } = await supabase.from('pharmacies').select('*').eq('id', id).eq('update_token', token).single();
       if (data) setPharmacy(data);
     }
     if (id && token) verify();
-    return () => { window.removeEventListener('online', hO); window.removeEventListener('offline', hF); };
   }, [id, token]);
 
-  const toggleStatus = async () => {
-    if (!isOnline) return;
-    const newStatus = !pharmacy.is_open;
-    const { error } = await supabase.from('pharmacies').update({ is_open: newStatus }).eq('id', id);
-    if (!error) {
-      setPharmacy({ ...pharmacy, is_open: newStatus });
-      if (navigator.vibrate) navigator.vibrate(80); 
-    }
+  const updateField = async (field: string, value: any) => {
+    const { error } = await supabase.from('pharmacies').update({ [field]: value }).eq('id', id);
+    if (!error) setPharmacy({ ...pharmacy, [field]: value });
   };
 
-  if (!pharmacy) return <div className="p-10 text-center font-bold text-zinc-600 bg-black min-h-screen pt-40 tracking-widest uppercase text-xs">Verifying Access...</div>;
-
-  const fontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  if (!pharmacy) return <div className="p-10 text-center font-bold text-zinc-600 bg-black min-h-screen pt-40">Verifying...</div>;
 
   return (
-    <div style={{ fontFamily: fontStack }} className={`max-w-md mx-auto p-10 text-center transition-colors min-h-screen ${isOnline ? 'bg-black text-white' : 'bg-red-950 text-white'}`}>
-      <div className="mb-20">
-        <h1 className="text-3xl font-extrabold tracking-tight">{pharmacy.name}</h1>
-        <p className={`text-xs font-bold mt-2 uppercase tracking-[0.2em] ${isOnline ? 'text-zinc-500' : 'text-red-400'}`}>
-          {isOnline ? 'Cloud Sync Active' : 'Offline - Check Data'}
-        </p>
-      </div>
+    <div className="max-w-md mx-auto p-8 text-center bg-black min-h-screen text-white font-[-apple-system,sans-serif]">
+      <h1 className="text-2xl font-extrabold mb-10">{pharmacy.name}</h1>
       
       <button 
-        onClick={toggleStatus}
-        disabled={!isOnline}
-        className={`w-64 h-64 mx-auto rounded-full flex flex-col items-center justify-center transition-all active:scale-95 border-[10px] shadow-2xl ${!isOnline ? 'opacity-30' : ''} ${
-          pharmacy.is_open ? 'bg-green-500 border-green-400' : 'bg-zinc-800 border-zinc-700'
-        }`}
+        onClick={() => updateField('is_open', !pharmacy.is_open)}
+        className={`w-48 h-48 mx-auto rounded-full mb-10 border-[8px] transition-all active:scale-95 ${pharmacy.is_open ? 'bg-green-500 border-green-400' : 'bg-zinc-800 border-zinc-700'}`}
       >
-        <span className="text-5xl font-black">{pharmacy.is_open ? 'OPEN' : 'CLOSED'}</span>
-        <span className="text-[11px] font-bold opacity-60 mt-2">TAP TO TOGGLE</span>
+        <span className="text-4xl font-black block">{pharmacy.is_open ? 'OPEN' : 'CLOSED'}</span>
       </button>
 
-      <p className="mt-20 text-zinc-600 text-[11px] font-bold uppercase tracking-[0.3em]">
-        Status Syncs Instantly
-      </p>
+      <div className="bg-zinc-900 p-6 rounded-3xl text-left">
+        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-2">Set Closing Time Today</label>
+        <input 
+          type="time" 
+          value={pharmacy.closing_time || ""} 
+          onChange={(e) => updateField('closing_time', e.target.value)}
+          className="w-full bg-zinc-800 p-4 rounded-xl text-white font-bold text-xl border-none outline-none"
+        />
+      </div>
     </div>
   );
 }
 
-export default function Page() {
-  return <Suspense fallback={<div className="bg-black min-h-screen" />}><UpdateForm /></Suspense>;
-}
+export default function Page() { return <Suspense><UpdateForm /></Suspense>; }
