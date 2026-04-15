@@ -17,17 +17,21 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const fetchPharmacies = async () => {
     setIsSyncing(true);
     const { data } = await supabase.from('pharmacies').select('*');
     if (data) setList(data as Pharmacy[]);
-    // Artificial delay so the user sees the "spin" feedback
     setTimeout(() => setIsSyncing(false), 500);
   };
 
   useEffect(() => {
     fetchPharmacies();
+    // Check if user prefers dark mode on first load
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setIsDarkMode(true);
+    }
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -35,15 +39,6 @@ export default function Home() {
         () => console.log("Location access denied")
       );
     }
-
-    // Realtime listener (keeps trying in the background)
-    const channel = supabase.channel('realtime_pharmacies')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pharmacies' }, () => {
-        fetchPharmacies();
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const filteredList = list
@@ -56,56 +51,68 @@ export default function Home() {
     });
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-slate-50 min-h-screen font-sans">
-      <header className="mb-8 flex justify-between items-start">
-        <div className="text-left">
-          <h1 className="text-4xl font-black text-blue-700 tracking-tighter">Bula Health 🌴</h1>
-          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Pharmacy Tracker</p>
-        </div>
-        
-        {/* The Sync Button */}
-        <button 
-          onClick={fetchPharmacies}
-          className={`p-3 rounded-2xl bg-white shadow-md transition-all active:scale-90 ${isSyncing ? 'animate-spin' : ''}`}
-        >
-          <span className="text-xl">🔄</span>
-        </button>
-      </header>
-
-      <div className="sticky top-4 z-10 mb-8">
-        <input 
-          type="text" 
-          placeholder="Search pharmacy name..." 
-          className="w-full p-5 rounded-2xl border-none shadow-xl outline-blue-500 bg-white text-lg"
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
-      <div className="space-y-4">
-        {filteredList.map((p) => (
-          <div key={p.id} className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex justify-between items-center transition-transform active:scale-[0.98]">
-            <div className="pr-4">
-              <h2 className="text-xl font-extrabold text-slate-900 leading-tight">{p.name}</h2>
-              <p className="text-[11px] text-slate-400 font-medium mt-1">{p.address}</p>
-            </div>
-            <div className={`shrink-0 px-5 py-2.5 rounded-full font-black text-[10px] tracking-tighter border-2 ${
-              p.is_open 
-              ? 'bg-green-50 border-green-100 text-green-600' 
-              : 'bg-red-50 border-red-100 text-red-500'
-            }`}>
-              {p.is_open ? '● OPEN' : '○ CLOSED'}
-            </div>
+    <div className={`${isDarkMode ? 'dark bg-slate-900' : 'bg-slate-50'} min-h-screen transition-colors duration-300 font-sans`}>
+      <div className="max-w-xl mx-auto p-6">
+        <header className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className={`text-4xl font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-blue-700'}`}>
+              Bula Health 🌴
+            </h1>
+            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Pharmacy Tracker</p>
           </div>
-        ))}
-        
-        {filteredList.length === 0 && (
-          <p className="text-center text-slate-400 mt-10 font-bold uppercase text-xs tracking-widest">No pharmacies found</p>
-        )}
+          
+          <div className="flex gap-2">
+            {/* Theme Toggle Button */}
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`p-3 rounded-2xl shadow-md transition-all active:scale-90 ${isDarkMode ? 'bg-slate-800 text-yellow-400' : 'bg-white text-slate-600'}`}
+            >
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
+
+            {/* Sync Button */}
+            <button 
+              onClick={fetchPharmacies}
+              className={`p-3 rounded-2xl shadow-md transition-all active:scale-90 ${isDarkMode ? 'bg-slate-800' : 'bg-white'} ${isSyncing ? 'animate-spin' : ''}`}
+            >
+              <span className="text-xl">🔄</span>
+            </button>
+          </div>
+        </header>
+
+        <div className="sticky top-4 z-10 mb-8">
+          <input 
+            type="text" 
+            placeholder="Search pharmacy name..." 
+            className={`w-full p-5 rounded-2xl border-none shadow-xl outline-blue-500 text-lg transition-colors ${
+              isDarkMode ? 'bg-slate-800 text-white placeholder:text-slate-500' : 'bg-white text-slate-900'
+            }`}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-4">
+          {filteredList.map((p) => (
+            <div key={p.id} className={`p-6 rounded-[2.5rem] shadow-sm border flex justify-between items-center transition-all active:scale-[0.98] ${
+              isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'
+            }`}>
+              <div className="pr-4">
+                <h2 className={`text-xl font-extrabold leading-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  {p.name}
+                </h2>
+                <p className="text-[11px] text-slate-400 font-medium mt-1">{p.address}</p>
+              </div>
+              <div className={`shrink-0 px-5 py-2.5 rounded-full font-black text-[10px] tracking-tighter border-2 ${
+                p.is_open 
+                ? (isDarkMode ? 'bg-green-900/30 border-green-800 text-green-400' : 'bg-green-50 border-green-100 text-green-600')
+                : (isDarkMode ? 'bg-red-900/30 border-red-800 text-red-400' : 'bg-red-50 border-red-100 text-red-500')
+              }`}>
+                {p.is_open ? '● OPEN' : '○ CLOSED'}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      
-      <footer className="mt-12 text-center pb-8">
-        <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Real-time updates from local pharmacies</p>
-      </footer>
     </div>
   );
 }
