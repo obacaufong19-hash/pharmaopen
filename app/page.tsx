@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './utils/supabase';
 
-// Defining the type properly fixes the TypeScript error
+// Properly defining the type fixes the "lat does not exist" error
 type Location = { lat: number; lng: number } | null;
 
 interface Pharmacy {
@@ -49,6 +49,7 @@ export default function Home() {
     if (data) setList(data as Pharmacy[]);
   }
 
+  // Filtering Logic
   const filteredList = list
     .filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -69,10 +70,11 @@ export default function Home() {
         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Fiji Pharmacy Tracker</p>
       </header>
 
+      {/* SEARCH AND FILTER BAR - Fixed Deployment */}
       <div className="sticky top-2 z-20 mb-6 space-y-3">
         <input 
           type="text" 
-          placeholder="Search Suva, Navua or Lami..." 
+          placeholder="Search by name..." 
           className="w-full p-5 rounded-2xl border-none shadow-xl focus:ring-2 focus:ring-blue-500 text-gray-700 bg-white"
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -91,6 +93,7 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Pharmacy Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredList.map((p) => (
           <div key={p.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
@@ -105,7 +108,7 @@ export default function Home() {
             <p className="text-[11px] text-slate-400 font-medium mb-6 line-clamp-1">{p.address}</p>
             <div className="flex gap-2">
               <a href={`tel:${p.phone_number}`} className="flex-1 bg-slate-900 text-white text-center py-4 rounded-2xl font-bold text-sm">Call</a>
-              <a href={`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`} target="_blank" className="flex-1 border-2 border-slate-100 text-slate-700 text-center py-4 rounded-2xl font-bold text-sm">Map</a>
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ' ' + p.address)}`} target="_blank" className="flex-1 border-2 border-slate-100 text-slate-700 text-center py-4 rounded-2xl font-bold text-sm">Map</a>
             </div>
           </div>
         ))}
