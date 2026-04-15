@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './utils/supabase';
 
-// FIX 1: The missing Interface that caused your "Cannot find name 'Pharmacy'" error
 interface Pharmacy {
   id: string;
   name: string;
@@ -23,59 +22,60 @@ export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [mounted, setMounted] = useState(false); 
-
-  const fetchPharmacies = async () => {
-    if (typeof window === 'undefined' || !navigator.onLine) return;
-    setIsSyncing(true);
-    try {
-      const { data, error } = await supabase.from('pharmacies').select('*');
-      if (error) console.error("Supabase error:", error);
-      if (data) setList(data as Pharmacy[]);
-    } catch (e) {
-      console.error("Fetch failed:", e);
-    } finally {
-      setTimeout(() => setIsSyncing(false), 600);
-    }
-  };
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true); // Signal the browser is ready
+    setMounted(true);
     setCurrentTime(new Date());
-    fetchPharmacies();
-
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) setIsDarkMode(true);
     
-    const hO = () => setIsOnline(true);
-    const hF = () => setIsOnline(false);
-    window.addEventListener('online', hO);
-    window.addEventListener('offline', hF);
+    // 1. Safe Theme Check
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setIsDarkMode(true);
+    }
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => 
-        setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+    // 2. Safe Data Fetch
+    const fetchInitialData = async () => {
+      setIsSyncing(true);
+      try {
+        const { data } = await supabase.from('pharmacies').select('*');
+        if (data) setList(data as Pharmacy[]);
+      } catch (e) {
+        console.error("Supabase fail:", e);
+      } finally {
+        setIsSyncing(false);
+      }
+    };
+    fetchInitialData();
+
+    // 3. Ultra-Safe Geolocation (The likely crash point)
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (pos.coords) {
+            setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          }
+        },
+        (err) => console.warn("Location denied:", err.message),
+        { enableHighAccuracy: false, timeout: 5000 }
       );
     }
-    return () => {
-      window.removeEventListener('online', hO);
-      window.removeEventListener('offline', hF);
-      clearInterval(timer);
-    };
+
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
   }, []);
 
-  // FIX 2: If the app isn't ready, show a clean loading screen instead of crashing
-  if (!mounted) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white font-bold">Bula...</div>;
-  }
+  // Prevent hydration errors
+  if (!mounted) return <div className="min-h-screen bg-zinc-950" />;
 
   const getClosingSnippet = (closingTime: string | null) => {
     if (!closingTime || !currentTime) return null;
-    const [hours, minutes] = closingTime.split(':').map(Number);
-    const closeDate = new Date();
-    closeDate.setHours(hours, minutes, 0);
-    const diffMins = Math.round((closeDate.getTime() - currentTime.getTime()) / 60000);
-    return (diffMins > 0 && diffMins <= 120) ? `Closing in ${diffMins}m` : null;
+    try {
+      const [hours, minutes] = closingTime.split(':').map(Number);
+      const closeDate = new Date(currentTime);
+      closeDate.setHours(hours, minutes, 0);
+      const diffMins = Math.round((closeDate.getTime() - currentTime.getTime()) / 60000);
+      return (diffMins > 0 && diffMins <= 120) ? `Closing in ${diffMins}m` : null;
+    } catch { return null; }
   };
 
   const filteredList = list
@@ -88,36 +88,30 @@ export default function Home() {
     })
     .sort((a, b) => {
       if (!userLoc) return 0;
-      return Math.hypot(a.lat - userLoc.lat, a.lng - userLoc.lng) - Math.hypot(b.lat - userLoc.lat, b.lng - userLoc.lng);
+      // Distance formula with safety check
+      const distA = Math.sqrt(Math.pow(a.lat - userLoc.lat, 2) + Math.pow(a.lng - userLoc.lng, 2));
+      const distB = Math.sqrt(Math.pow(b.lat - userLoc.lat, 2) + Math.pow(b.lng - userLoc.lng, 2));
+      return distA - distB;
     });
 
-  const fontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-
   return (
-    <div style={{ fontFamily: fontStack }} className={`${isDarkMode ? 'dark bg-black text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen transition-colors duration-300`}>
-      {!isOnline && <div className="bg-red-500 text-white text-[11px] font-bold py-2 text-center sticky top-0 z-50">No Connection</div>}
-
+    <div className={`${isDarkMode ? 'dark bg-black text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen font-sans transition-colors duration-300`}>
       <div className="max-w-xl mx-auto p-5 pb-24">
-        <header className="mb-6 flex justify-between items-end">
+        <header className="mb-8 flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">Bula Health 🌴</h1>
-            <p className="text-gray-500 font-semibold text-xs mt-1">{isOnline ? '● Live' : '○ Offline'}</p>
+            <p className="text-zinc-500 font-bold text-[10px] uppercase mt-1 tracking-widest">Pharmacy Tracker</p>
           </div>
-          <div className="flex gap-3">
-            <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${isDarkMode ? 'bg-zinc-800' : 'bg-white'}`}>
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
-            <button onClick={fetchPharmacies} className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${isSyncing ? 'animate-spin' : ''} ${isDarkMode ? 'bg-zinc-800' : 'bg-white'}`}>
-              🔄
-            </button>
-          </div>
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${isDarkMode ? 'bg-zinc-900 border border-zinc-800' : 'bg-white'}`}>
+            {isDarkMode ? '🌙' : '☀️'}
+          </button>
         </header>
 
-        <div className="sticky top-4 z-10 mb-6 space-y-4">
+        <div className="sticky top-4 z-20 mb-6 space-y-4">
           <input 
             type="text" 
-            placeholder="Search Pharmacies" 
-            className={`w-full p-4 rounded-xl border-none shadow-sm text-base ${isDarkMode ? 'bg-zinc-800 text-white' : 'bg-white text-black'}`} 
+            placeholder="Search name or area..." 
+            className={`w-full p-4 rounded-2xl border-none shadow-lg text-base focus:ring-2 focus:ring-blue-500 outline-none ${isDarkMode ? 'bg-zinc-900 text-white placeholder:text-zinc-600' : 'bg-white text-black placeholder:text-zinc-400'}`} 
             onChange={(e) => setSearch(e.target.value)} 
           />
           <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
@@ -125,7 +119,7 @@ export default function Home() {
               <button 
                 key={cat} 
                 onClick={() => setFilter(cat)} 
-                className={`px-5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap shadow-sm ${filter === cat ? 'bg-blue-600 text-white' : (isDarkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-white text-gray-500')}`}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all whitespace-nowrap shadow-sm ${filter === cat ? 'bg-blue-600 text-white' : (isDarkMode ? 'bg-zinc-900 text-zinc-500 border border-zinc-800' : 'bg-white text-zinc-500')}`}
               >
                 {cat}
               </button>
@@ -133,25 +127,34 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="grid gap-4">
           {filteredList.map((p) => {
             const closingSoon = p.is_open ? getClosingSnippet(p.closing_time) : null;
-            const waMessage = encodeURIComponent(`Bula ${p.name}, checking if you have a specific medicine in stock?`);
+            const waMessage = encodeURIComponent(`Bula ${p.name}, do you have medicine in stock?`);
             
             return (
-              <div key={p.id} className={`p-5 rounded-2xl shadow-sm flex justify-between items-center ${isDarkMode ? 'bg-zinc-900' : 'bg-white'}`}>
-                <div className="flex-1 pr-4">
-                  <h2 className="text-lg font-bold tracking-tight">{p.name}</h2>
-                  <p className="text-[13px] text-gray-500 font-medium leading-snug mb-3">{p.address}</p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <a href={`tel:${p.phone_number}`} className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2.5 py-1.5 rounded-lg">📞 Call</a>
-                    <a href={`https://wa.me/${p.phone_number.replace(/\s+/g, '')}?text=${waMessage}`} target="_blank" className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2.5 py-1.5 rounded-lg">💬 Stock</a>
-                    {closingSoon && <span className="text-[10px] font-bold text-orange-500 bg-orange-500/10 px-2.5 py-1.5 rounded-lg animate-pulse">⏰ {closingSoon}</span>}
+              <div key={p.id} className={`p-5 rounded-[24px] shadow-sm flex flex-col gap-4 border transition-transform active:scale-[0.98] ${isDarkMode ? 'bg-zinc-950 border-zinc-900' : 'bg-white border-transparent'}`}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-black leading-tight tracking-tight">{p.name}</h2>
+                    <p className={`text-xs font-bold mt-1 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>{p.address}</p>
+                  </div>
+                  <div className={`px-3 py-1 rounded-lg font-black text-[10px] tracking-tighter ${p.is_open ? 'bg-green-500/10 text-green-500' : 'bg-zinc-500/10 text-zinc-500'}`}>
+                    {p.is_open ? 'OPEN NOW' : 'CLOSED'}
                   </div>
                 </div>
-                <div className={`shrink-0 px-4 py-1.5 rounded-full font-bold text-[11px] ${p.is_open ? 'bg-green-500 text-white' : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-500'}`}>
-                  {p.is_open ? 'OPEN' : 'CLOSED'}
+
+                <div className="flex gap-2">
+                  <a href={`tel:${p.phone_number}`} className="flex-1 bg-blue-600 text-white text-center py-3 rounded-xl font-bold text-xs">Call</a>
+                  <a href={`https://wa.me/${p.phone_number.replace(/\s+/g, '')}?text=${waMessage}`} target="_blank" className="flex-1 bg-green-600 text-white text-center py-3 rounded-xl font-bold text-xs">WhatsApp</a>
                 </div>
+
+                {closingSoon && (
+                  <div className="bg-orange-500/10 py-2 px-3 rounded-lg flex items-center gap-2">
+                    <span className="text-orange-500 animate-pulse">●</span>
+                    <span className="text-orange-500 font-bold text-[10px] uppercase tracking-wider">{closingSoon}</span>
+                  </div>
+                )}
               </div>
             );
           })}
