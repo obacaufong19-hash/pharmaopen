@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './utils/supabase';
 
+// Restored missing interface to fix build error
 interface Pharmacy {
   id: string;
   name: string;
