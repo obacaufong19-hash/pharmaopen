@@ -10,7 +10,7 @@ interface Pharmacy {
   lat: number;
   lng: number;
   is_open: boolean;
-  closing_time: string | null; // HH:mm:ss format
+  closing_time: string | null;
 }
 
 export default function Home() {
@@ -33,7 +33,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchPharmacies();
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000); // Update every minute
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) setIsDarkMode(true);
     
     const hO = () => setIsOnline(true);
@@ -58,14 +58,8 @@ export default function Home() {
     const [hours, minutes] = closingTime.split(':').map(Number);
     const closeDate = new Date();
     closeDate.setHours(hours, minutes, 0);
-
-    const diffMs = closeDate.getTime() - currentTime.getTime();
-    const diffMins = Math.round(diffMs / 60000);
-
-    if (diffMins > 0 && diffMins <= 120) {
-      return `Closing in ${diffMins}m`;
-    }
-    return null;
+    const diffMins = Math.round((closeDate.getTime() - currentTime.getTime()) / 60000);
+    return (diffMins > 0 && diffMins <= 120) ? `Closing in ${diffMins}m` : null;
   };
 
   const filteredList = list
@@ -111,14 +105,17 @@ export default function Home() {
         <div className="space-y-3">
           {filteredList.map((p) => {
             const closingSoon = p.is_open ? getClosingSnippet(p.closing_time) : null;
+            const waMessage = encodeURIComponent(`Bula ${p.name}, checking if you have a specific medicine in stock? Found you on Bula Health.`);
+            
             return (
               <div key={p.id} className={`p-5 rounded-2xl shadow-sm flex justify-between items-center ${isDarkMode ? 'bg-zinc-900' : 'bg-white'}`}>
                 <div className="flex-1 pr-4">
                   <h2 className="text-lg font-bold tracking-tight">{p.name}</h2>
-                  <p className="text-[13px] text-gray-500 font-medium leading-snug mb-2">{p.address}</p>
-                  <div className="flex items-center gap-2">
-                    <a href={`tel:${p.phone_number}`} className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2 py-1 rounded-md">📞 Call</a>
-                    {closingSoon && <span className="text-[10px] font-bold text-orange-500 bg-orange-500/10 px-2 py-1 rounded-md animate-pulse">⏰ {closingSoon}</span>}
+                  <p className="text-[13px] text-gray-500 font-medium leading-snug mb-3">{p.address}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a href={`tel:${p.phone_number}`} className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-2.5 py-1.5 rounded-lg">📞 Call</a>
+                    <a href={`https://wa.me/${p.phone_number.replace(/\s+/g, '')}?text=${waMessage}`} target="_blank" className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2.5 py-1.5 rounded-lg">💬 Check Stock</a>
+                    {closingSoon && <span className="text-[10px] font-bold text-orange-500 bg-orange-500/10 px-2 py-1.5 rounded-lg animate-pulse">⏰ {closingSoon}</span>}
                   </div>
                 </div>
                 <div className={`shrink-0 px-4 py-1.5 rounded-full font-bold text-[11px] ${p.is_open ? 'bg-green-500 text-white' : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-500'}`}>
