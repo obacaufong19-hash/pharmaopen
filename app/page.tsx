@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './utils/supabase';
 
-// CRITICAL: Restored the interface to fix your build error
 interface Pharmacy {
   id: string;
   name: string;
@@ -22,23 +21,30 @@ export default function Home() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null); // Start as null to avoid mismatch
 
   const fetchPharmacies = async () => {
-    if (!navigator.onLine) return;
+    if (typeof window !== 'undefined' && !navigator.onLine) return;
     setIsSyncing(true);
     try {
       const { data } = await supabase.from('pharmacies').select('*');
       if (data) setList(data as Pharmacy[]);
+    } catch (e) {
+      console.error(e);
     } finally {
       setTimeout(() => setIsSyncing(false), 600);
     }
   };
 
   useEffect(() => {
+    setCurrentTime(new Date()); // Only set time on client side
     fetchPharmacies();
+
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) setIsDarkMode(true);
+    
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setIsDarkMode(true);
+    }
     
     const hO = () => setIsOnline(true);
     const hF = () => setIsOnline(false);
@@ -58,7 +64,7 @@ export default function Home() {
   }, []);
 
   const getClosingSnippet = (closingTime: string | null) => {
-    if (!closingTime) return null;
+    if (!closingTime || !currentTime) return null;
     const [hours, minutes] = closingTime.split(':').map(Number);
     const closeDate = new Date();
     closeDate.setHours(hours, minutes, 0);
@@ -124,7 +130,6 @@ export default function Home() {
         <div className="space-y-3">
           {filteredList.map((p) => {
             const closingSoon = p.is_open ? getClosingSnippet(p.closing_time) : null;
-            // Native WhatsApp link formatting
             const waMessage = encodeURIComponent(`Bula ${p.name}, checking if you have a specific medicine in stock? Found you on Bula Health.`);
             
             return (
