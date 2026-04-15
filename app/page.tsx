@@ -21,30 +21,30 @@ export default function Home() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
-  const [currentTime, setCurrentTime] = useState<Date | null>(null); // Start as null to avoid mismatch
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [mounted, setMounted] = useState(false); // New Guard
 
   const fetchPharmacies = async () => {
-    if (typeof window !== 'undefined' && !navigator.onLine) return;
+    if (typeof window === 'undefined' || !navigator.onLine) return;
     setIsSyncing(true);
     try {
-      const { data } = await supabase.from('pharmacies').select('*');
+      const { data, error } = await supabase.from('pharmacies').select('*');
+      if (error) console.error("Supabase Error:", error.message);
       if (data) setList(data as Pharmacy[]);
     } catch (e) {
-      console.error(e);
+      console.error("Fetch Catch:", e);
     } finally {
       setTimeout(() => setIsSyncing(false), 600);
     }
   };
 
   useEffect(() => {
-    setCurrentTime(new Date()); // Only set time on client side
+    setMounted(true); // Signal that browser is ready
+    setCurrentTime(new Date());
     fetchPharmacies();
 
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setIsDarkMode(true);
-    }
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) setIsDarkMode(true);
     
     const hO = () => setIsOnline(true);
     const hF = () => setIsOnline(false);
@@ -62,6 +62,9 @@ export default function Home() {
       clearInterval(timer);
     };
   }, []);
+
+  // Prevent any rendering until the component has "mounted" on the client
+  if (!mounted) return null;
 
   const getClosingSnippet = (closingTime: string | null) => {
     if (!closingTime || !currentTime) return null;
@@ -85,10 +88,8 @@ export default function Home() {
       return Math.hypot(a.lat - userLoc.lat, a.lng - userLoc.lng) - Math.hypot(b.lat - userLoc.lat, b.lng - userLoc.lng);
     });
 
-  const fontStack = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-
   return (
-    <div style={{ fontFamily: fontStack }} className={`${isDarkMode ? 'dark bg-black text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen transition-colors duration-300`}>
+    <div className={`${isDarkMode ? 'dark bg-black text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen font-sans transition-colors duration-300`}>
       {!isOnline && <div className="bg-red-500 text-white text-[11px] font-bold py-2 text-center sticky top-0 z-50">No Internet Connection</div>}
 
       <div className="max-w-xl mx-auto p-5 pb-24">
@@ -111,7 +112,7 @@ export default function Home() {
           <input 
             type="text" 
             placeholder="Search Pharmacies" 
-            className={`w-full p-4 rounded-xl border-none shadow-sm text-base ${isDarkMode ? 'bg-zinc-800 text-white' : 'bg-white text-black'}`} 
+            className={`w-full p-4 rounded-xl border-none shadow-sm text-base ${isDarkMode ? 'bg-zinc-800 text-white placeholder:text-zinc-500' : 'bg-white text-black placeholder:text-gray-400'}`} 
             onChange={(e) => setSearch(e.target.value)} 
           />
           <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
