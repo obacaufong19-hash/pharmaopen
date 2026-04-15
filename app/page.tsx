@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './utils/supabase';
 
-// 1. Define types to satisfy the TypeScript compiler
+// Defining the type properly fixes the TypeScript error
 type Location = { lat: number; lng: number } | null;
 
 interface Pharmacy {
@@ -14,118 +14,102 @@ interface Pharmacy {
   lat: number;
   lng: number;
   is_open: boolean;
-  last_updated: string;
 }
 
 export default function Home() {
   const [list, setList] = useState<Pharmacy[]>([]);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('All');
   const [userLoc, setUserLoc] = useState<Location>(null);
 
-  // Function to fetch pharmacies from Supabase
-  async function fetchPharmacies() {
-    const { data, error } = await supabase
-      .from('pharmacies')
-      .select('*');
-    
-    if (error) {
-      console.error('Error fetching data:', error);
-    } else if (data) {
-      setList(data as Pharmacy[]);
-    }
-  }
-
   useEffect(() => {
-    // 2. Get User Location for sorting
+    fetchPharmacies();
+
     if (typeof window !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLoc({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          });
-        },
-        (err) => console.log("Location access denied."),
+        (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => console.log("Location access denied."),
         { enableHighAccuracy: true }
       );
     }
 
-    // 3. Initial Data Fetch
-    fetchPharmacies();
-
-    // 4. Set up Realtime Subscription
-    const channel = supabase
-      .channel('realtime_pharmacies')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'pharmacies' },
-        () => {
-          fetchPharmacies();
-        }
-      )
+    const channel = supabase.channel('realtime_pharmacies')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pharmacies' }, () => {
+        fetchPharmacies();
+      })
       .subscribe();
 
-    // 5. Cleanup function (Returns void to satisfy TS)
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
 
-  // 6. Sort pharmacies by distance if user location is available
-  const sortedList = [...list].sort((a, b) => {
-    if (!userLoc) return 0;
-    const distA = Math.hypot(a.lat - userLoc.lat, a.lng - userLoc.lng);
-    const distB = Math.hypot(b.lat - userLoc.lat, b.lng - userLoc.lng);
-    return distA - distB;
-  });
+  async function fetchPharmacies() {
+    const { data } = await supabase.from('pharmacies').select('*');
+    if (data) setList(data as Pharmacy[]);
+  }
+
+  const filteredList = list
+    .filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+      const matchesArea = filter === 'All' || p.address.toLowerCase().includes(filter.toLowerCase());
+      return matchesSearch && matchesArea;
+    })
+    .sort((a, b) => {
+      if (!userLoc) return 0;
+      const distA = Math.hypot(a.lat - userLoc.lat, a.lng - userLoc.lng);
+      const distB = Math.hypot(b.lat - userLoc.lat, b.lng - userLoc.lng);
+      return distA - distB;
+    });
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-slate-50 min-h-screen font-sans">
-      <header className="mb-8 mt-4">
-        <h1 className="text-4xl font-black text-blue-700 tracking-tight">Bula Health 🌴</h1>
-        <p className="text-slate-500 font-medium font-semibold">Navua & Lami Pharmacy Tracker</p>
+    <div className="max-w-3xl mx-auto p-4 bg-slate-50 min-h-screen font-sans">
+      <header className="py-8 text-center">
+        <h1 className="text-4xl font-black text-blue-800 tracking-tighter">Bula Health 🌴</h1>
+        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Fiji Pharmacy Tracker</p>
       </header>
 
-      <div className="space-y-4">
-        {list.length === 0 && (
-          <p className="text-center py-10 text-slate-400">Searching for pharmacies...</p>
-        )}
-        
-        {sortedList.map((p) => (
-          <div key={p.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h2 className="font-bold text-xl text-slate-800">{p.name}</h2>
-                <p className="text-sm text-slate-500 mb-3">{p.address}</p>
-              </div>
-              <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest ${p.is_open ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {p.is_open ? 'Open' : 'Closed'}
+      <div className="sticky top-2 z-20 mb-6 space-y-3">
+        <input 
+          type="text" 
+          placeholder="Search Suva, Navua or Lami..." 
+          className="w-full p-5 rounded-2xl border-none shadow-xl focus:ring-2 focus:ring-blue-500 text-gray-700 bg-white"
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+          {['All', 'Suva', 'Navua', 'Lami', 'Samabula'].map((city) => (
+            <button
+              key={city}
+              onClick={() => setFilter(city)}
+              className={`px-6 py-2 rounded-full font-bold text-sm transition-all shadow-sm whitespace-nowrap ${
+                filter === city ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              {city}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filteredList.map((p) => (
+          <div key={p.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-start mb-4">
+              <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                p.is_open ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`}>
+                {p.is_open ? '● Open Now' : '○ Closed'}
               </span>
             </div>
-            
-            <div className="grid grid-cols-2 gap-3 mt-2">
-              <a 
-                href={`tel:${p.phone_number}`} 
-                className="flex items-center justify-center bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 active:scale-95 transition-all"
-              >
-                Call Now
-              </a>
-              <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center justify-center border-2 border-slate-200 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-50 active:scale-95 transition-all"
-              >
-                Directions
-              </a>
+            <h2 className="text-xl font-extrabold text-slate-900 leading-tight mb-1">{p.name}</h2>
+            <p className="text-[11px] text-slate-400 font-medium mb-6 line-clamp-1">{p.address}</p>
+            <div className="flex gap-2">
+              <a href={`tel:${p.phone_number}`} className="flex-1 bg-slate-900 text-white text-center py-4 rounded-2xl font-bold text-sm">Call</a>
+              <a href={`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`} target="_blank" className="flex-1 border-2 border-slate-100 text-slate-700 text-center py-4 rounded-2xl font-bold text-sm">Map</a>
             </div>
           </div>
         ))}
       </div>
-      
-      <footer className="mt-12 text-center text-slate-400 text-xs">
-        <p>Data updated in real-time by pharmacists.</p>
-        <p className="mt-1">Handcrafted in Navua 🇫🇯</p>
-      </footer>
     </div>
   );
 }
