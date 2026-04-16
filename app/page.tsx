@@ -143,14 +143,30 @@ function PharmacyAppContent() {
         )}
       </main>
 
-      {/* BOTTOM NAVIGATION */}
+      {/* RESTORED BOTTOM NAVIGATION BAR */}
       <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-lg z-[100]">
         <div className={`${isDarkMode ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white/80 border-white'} backdrop-blur-3xl rounded-[40px] border p-3 flex items-center justify-around shadow-2xl transition-all duration-500`}>
-          {['pharmacy', 'map', 'emergency', 'medpass'].map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`flex flex-col items-center gap-1.5 px-6 py-2 rounded-3xl transition-all duration-500 ${activeTab === tab ? 'text-blue-500 bg-blue-500/10 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]' : 'text-zinc-600'}`}>
-               <div className="text-[10px] font-black uppercase tracking-tighter">{tab === 'map' ? 'MAP' : tab === 'emergency' ? 'SOS' : tab === 'medpass' ? 'PASS' : 'RX'}</div>
-            </button>
-          ))}
+          
+          <button onClick={() => setActiveTab('pharmacy')} className={`flex flex-col items-center gap-1.5 px-6 py-2 rounded-3xl transition-all duration-500 ${activeTab === 'pharmacy' ? 'text-blue-500 bg-blue-500/10 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]' : 'text-zinc-600'}`}>
+             <svg className="w-6 h-6" fill={activeTab === 'pharmacy' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+             <span className="text-[9px] font-black uppercase tracking-tighter">RX</span>
+          </button>
+
+          <button onClick={() => setActiveTab('map')} className={`flex flex-col items-center gap-1.5 px-6 py-2 rounded-3xl transition-all duration-500 ${activeTab === 'map' ? 'text-blue-500 bg-blue-500/10 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]' : 'text-zinc-600'}`}>
+             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 20l-5.447-2.724A2 2 0 013 15.483V4.321a2 2 0 012.894-1.789L10 5l6-3 5.447 2.724A2 2 0 0123 6.517v11.162a2 2 0 01-2.894 1.789L15 17l-6 3z"/></svg>
+             <span className="text-[9px] font-black uppercase tracking-tighter">MAP</span>
+          </button>
+
+          <button onClick={() => setActiveTab('emergency')} className={`flex flex-col items-center gap-1.5 px-6 py-2 rounded-3xl transition-all duration-500 ${activeTab === 'emergency' ? 'text-red-500 bg-red-500/10' : 'text-zinc-600'}`}>
+             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+             <span className="text-[9px] font-black uppercase tracking-tighter">SOS</span>
+          </button>
+
+          <button onClick={() => setActiveTab('medpass')} className={`flex flex-col items-center gap-1.5 px-6 py-2 rounded-3xl transition-all duration-500 ${activeTab === 'medpass' ? 'text-blue-500 bg-blue-500/10' : 'text-zinc-600'}`}>
+             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+             <span className="text-[9px] font-black uppercase tracking-tighter">PASS</span>
+          </button>
+
         </div>
       </nav>
     </div>
