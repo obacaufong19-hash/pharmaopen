@@ -8,6 +8,67 @@ import {
 
 const queryClient = new QueryClient();
 
+// --- LOCALIZATION DICTIONARY ---
+const translations: any = {
+  en: {
+    rx: "Pharmacy",
+    map: "Map",
+    sos: "SOS",
+    settings: "Settings",
+    emergency_title: "Emergency",
+    emergency_sub: "Direct Assistance • Central Division",
+    dispatch: "Smart Dispatch",
+    ping: "Location Ping",
+    first_aid: "First Aid Assistant",
+    police: "POLICE",
+    ambulance: "AMBULANCE",
+    broadcast: "Broadcast Location",
+    syncing: "Synchronizing...",
+    bleeding: "Severe Bleeding",
+    bleeding_desc: "1. Apply firm direct pressure with clean cloth. 2. Raise limb above heart.",
+    choking: "Choking Protocol",
+    choking_desc: "1. Give 5 sharp back blows. 2. Perform 5 abdominal thrusts.",
+  },
+  fj: {
+    rx: "Wainimate",
+    map: "Mape",
+    sos: "SOS",
+    settings: "Sema",
+    emergency_title: "Leqa Vakacalaka",
+    emergency_sub: "Veivuke Totolo • Wasewase e loma",
+    dispatch: "Vakatotolo ni Veivuke",
+    ping: "Vanua o tiko kina",
+    first_aid: "Veivuke ni Bera na Vuniwai",
+    police: "OVANI",
+    ambulance: "AMBULANCE",
+    broadcast: "Vakauta na vanua o tiko kina",
+    syncing: "Vakavoutaki tiko...",
+    bleeding: "Turunidra Vakalevu",
+    bleeding_desc: "1. Tabaka dei na vanua e mavoa ena isulu savasava. 2. Laveta na liga se yava.",
+    choking: "Sogo na iLolo",
+    choking_desc: "1. Mokuta vakalima na daku. 2. Tabaka vakalima na kete.",
+  },
+  hi: {
+    rx: "दवाखाना",
+    map: "नक्शा",
+    sos: "एसओएस",
+    settings: "सेटिंग्स",
+    emergency_title: "आपातकालीन",
+    emergency_sub: "सीधी सहायता • मध्य मंडल",
+    dispatch: "स्मार्ट डिस्पैच",
+    ping: "स्थान पिंग",
+    first_aid: "प्राथमिक चिकित्सा",
+    police: "पुलिस",
+    ambulance: "एम्बुलेंस",
+    broadcast: "स्थान साझा करें",
+    syncing: "सिंक हो रहा है...",
+    bleeding: "भारी रक्तस्राव",
+    bleeding_desc: "1. साफ कपड़े से घाव पर दबाव डालें। 2. अंग को ऊपर उठाएं।",
+    choking: "दम घुटना",
+    choking_desc: "1. पीठ पर 5 बार थपथपाएं। 2. पेट पर 5 बार धक्का दें।",
+  }
+};
+
 // --- COMPONENTS ---
 
 const Logo = ({ isDarkMode }: { isDarkMode: boolean }) => (
@@ -42,8 +103,11 @@ const Collapsible = ({ title, children, isDarkMode }: any) => {
 function PharmacyAppContent() {
   const [activeTab, setActiveTab] = useState('pharmacy');
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [lang, setLang] = useState('en');
   const [showHeader, setShowHeader] = useState(true);
   const lastScrollY = useRef(0);
+  
+  const t = translations[lang];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -74,19 +138,33 @@ function PharmacyAppContent() {
           <header className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <Logo isDarkMode={isDarkMode} />
-              <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-br from-blue-600 to-blue-400 bg-clip-text text-transparent">Bula Health</h1>
+              <div className="flex flex-col">
+                <h1 className="text-xl font-black tracking-tighter bg-gradient-to-br from-blue-600 to-blue-400 bg-clip-text text-transparent">Bula Health</h1>
+                
+                {/* LANGUAGE SELECTOR */}
+                <div className="flex gap-2 mt-1">
+                  {['en', 'fj', 'hi'].map((l) => (
+                    <button 
+                      key={l} 
+                      onClick={() => setLang(l)} 
+                      className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md transition-all ${lang === l ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-500'}`}
+                    >
+                      {l === 'en' ? 'EN' : l === 'fj' ? 'FJ' : 'हिन्दी'}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="flex gap-2">
-              {/* SYNC BUTTON */}
               <button 
                 onClick={() => refetch()} 
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-all active:scale-90 ${isDarkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-white border-zinc-200 text-zinc-600'}`}
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center border transition-all active:scale-90 ${isDarkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-white border-zinc-200 text-zinc-600'}`}
               >
-                <svg className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
-              <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-all active:scale-90 ${isDarkMode ? 'bg-zinc-900 border-zinc-800 text-orange-400' : 'bg-white border-zinc-200 text-blue-600'}`}>{isDarkMode ? '🌙' : '☀️'}</button>
+              <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-2xl flex items-center justify-center border transition-all active:scale-90 ${isDarkMode ? 'bg-zinc-900 border-zinc-800 text-orange-400' : 'bg-white border-zinc-200 text-blue-600'}`}>{isDarkMode ? '🌙' : '☀️'}</button>
             </div>
           </header>
         </div>
@@ -96,10 +174,9 @@ function PharmacyAppContent() {
         {/* RX TAB */}
         {activeTab === 'pharmacy' && (
           <div className="grid gap-4">
-            {isLoading ? <div className="text-center py-20 opacity-20 font-black text-xs tracking-widest uppercase">Synchronizing...</div> : pharmacies.map((p: any) => (
+            {isLoading ? <div className="text-center py-20 opacity-20 font-black text-xs tracking-widest uppercase">{t.syncing}</div> : pharmacies.map((p: any) => (
               <div key={p.id} className={`p-6 rounded-[40px] border transition-all duration-300 ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white shadow-sm'}`}>
                 <div className="flex items-center gap-3 mb-1">
-                  {/* BLINKING STATUS LIGHT */}
                   <div className={`h-2.5 w-2.5 rounded-full animate-pulse ${p.is_open ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.6)]'}`} />
                   <h2 className="text-lg font-black tracking-tight">{p.name}</h2>
                 </div>
@@ -125,31 +202,30 @@ function PharmacyAppContent() {
         {activeTab === 'emergency' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="mb-6">
-               <h2 className="text-3xl font-black tracking-tighter text-red-500 uppercase">Emergency</h2>
-               <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Direct Assistance • Central Division</p>
+               <h2 className="text-3xl font-black tracking-tighter text-red-500 uppercase">{t.emergency_title}</h2>
+               <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">{t.emergency_sub}</p>
             </div>
 
-            <Collapsible title="Smart Dispatch" isDarkMode={isDarkMode}>
+            <Collapsible title={t.dispatch} isDarkMode={isDarkMode}>
               <div className="grid grid-cols-2 gap-3">
-                <a href="tel:911" className="p-6 rounded-3xl bg-red-500 text-center text-white font-black text-xs shadow-lg shadow-red-500/20 active:scale-95 transition-all">POLICE (911)</a>
-                <a href="tel:917" className="p-6 rounded-3xl bg-red-600 text-center text-white font-black text-xs shadow-lg shadow-red-600/20 active:scale-95 transition-all">AMBULANCE</a>
+                <a href="tel:911" className="p-6 rounded-3xl bg-red-500 text-center text-white font-black text-xs shadow-lg shadow-red-500/20 active:scale-95 transition-all">{t.police} (911)</a>
+                <a href="tel:917" className="p-6 rounded-3xl bg-red-600 text-center text-white font-black text-xs shadow-lg shadow-red-600/20 active:scale-95 transition-all">{t.ambulance}</a>
               </div>
             </Collapsible>
 
-            <Collapsible title="Location Ping" isDarkMode={isDarkMode}>
+            <Collapsible title={t.ping} isDarkMode={isDarkMode}>
               <div className={`p-6 rounded-3xl border mb-4 text-center ${isDarkMode ? 'bg-zinc-800/40 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
-                <div className="text-[10px] font-black text-zinc-500 uppercase mb-2">Current Coordinates</div>
+                <div className="text-[10px] font-black text-zinc-500 uppercase mb-2 tracking-widest">{t.ping}</div>
                 <div className="text-xl font-mono font-bold tracking-tighter text-blue-500">-18.226, 178.165</div>
               </div>
-              <button className="w-full py-5 rounded-3xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-600/20 active:scale-[0.98] transition-all">Broadcast Location</button>
+              <button className="w-full py-5 rounded-3xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-600/20 active:scale-[0.98] transition-all">{t.broadcast}</button>
             </Collapsible>
 
-            <Collapsible title="First Aid Assistant" isDarkMode={isDarkMode}>
+            <Collapsible title={t.first_aid} isDarkMode={isDarkMode}>
               <div className="space-y-4">
                 {[
-                  { t: 'Severe Bleeding', d: '1. Apply firm direct pressure with clean cloth. 2. Raise limb above heart. 3. Call 917 if bleeding persists.' },
-                  { t: 'Choking Protocol', d: '1. Lean forward and give 5 sharp back blows. 2. Perform 5 abdominal thrusts. 3. Repeat until airway is clear.' },
-                  { t: 'Unconscious Victim', d: '1. Check airway and breathing. 2. Move to recovery position. 3. Prepare for CPR if breathing stops.' }
+                  { t: t.bleeding, d: t.bleeding_desc },
+                  { t: t.choking, d: t.choking_desc },
                 ].map(aid => (
                   <div key={aid.t} className={`p-4 rounded-2xl border ${isDarkMode ? 'border-zinc-800/60 bg-zinc-900/40' : 'border-zinc-200 bg-white'}`}>
                     <div className="text-[10px] font-black uppercase mb-1.5 text-red-500 tracking-tight">{aid.t}</div>
@@ -164,26 +240,16 @@ function PharmacyAppContent() {
         {/* SETTINGS TAB */}
         {activeTab === 'settings' && (
           <div className="animate-in fade-in duration-500">
-            <h2 className="text-2xl font-black tracking-tighter mb-8">Settings</h2>
+            <h2 className="text-2xl font-black tracking-tighter mb-8">{t.settings}</h2>
             <div className="space-y-3">
               <div className={`p-6 rounded-[30px] border ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white shadow-sm'}`}>
-                <div className="text-[10px] font-black text-zinc-500 uppercase mb-4 tracking-widest">General</div>
+                <div className="text-[10px] font-black text-zinc-500 uppercase mb-4 tracking-widest">{t.settings}</div>
                 <div className="flex justify-between items-center mb-6">
                   <span className="text-xs font-bold">Dark Appearance</span>
                   <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-12 h-6 rounded-full p-1 transition-colors ${isDarkMode ? 'bg-blue-600' : 'bg-zinc-300'}`}>
                     <div className={`w-4 h-4 bg-white rounded-full transition-transform ${isDarkMode ? 'translate-x-6' : 'translate-x-0'}`} />
                   </button>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold">Offline Sync</span>
-                  <div className="text-[10px] font-black text-blue-500 uppercase tracking-tighter">Enabled</div>
-                </div>
-              </div>
-              
-              <div className={`p-6 rounded-[30px] border ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white shadow-sm'}`}>
-                <div className="text-[10px] font-black text-zinc-500 uppercase mb-2 tracking-widest">About</div>
-                <div className="text-xs font-bold">Bula Health Prototype</div>
-                <div className="text-[10px] text-zinc-500 mt-1 uppercase font-bold tracking-tighter">v0.3.0 • Local Build</div>
               </div>
             </div>
           </div>
@@ -202,19 +268,19 @@ function PharmacyAppContent() {
         <div className={`${isDarkMode ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white/80 border-white'} backdrop-blur-3xl rounded-[44px] border p-2.5 flex items-center justify-around shadow-[0_20px_50px_rgba(0,0,0,0.3)]`}>
           <button onClick={() => setActiveTab('pharmacy')} className={`flex flex-col items-center gap-1.5 px-6 py-2.5 rounded-[32px] transition-all duration-300 ${activeTab === 'pharmacy' ? 'text-blue-500 bg-blue-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}>
              <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-             <span className="text-[9px] font-black uppercase tracking-tighter">RX</span>
+             <span className="text-[9px] font-black uppercase tracking-tighter">{t.rx}</span>
           </button>
           <button onClick={() => setActiveTab('map')} className={`flex flex-col items-center gap-1.5 px-6 py-2.5 rounded-[32px] transition-all duration-300 ${activeTab === 'map' ? 'text-blue-500 bg-blue-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}>
              <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M9 20l-5.447-2.724A2 2 0 013 15.483V4.321a2 2 0 012.894-1.789L10 5l6-3 5.447 2.724A2 2 0 0123 6.517v11.162a2 2 0 01-2.894 1.789L15 17l-6 3z"/></svg>
-             <span className="text-[9px] font-black uppercase tracking-tighter">MAP</span>
+             <span className="text-[9px] font-black uppercase tracking-tighter">{t.map}</span>
           </button>
           <button onClick={() => setActiveTab('emergency')} className={`flex flex-col items-center gap-1.5 px-6 py-2.5 rounded-[32px] transition-all duration-300 ${activeTab === 'emergency' ? 'text-red-500 bg-red-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}>
              <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-             <span className="text-[9px] font-black uppercase tracking-tighter">SOS</span>
+             <span className="text-[9px] font-black uppercase tracking-tighter">{t.sos}</span>
           </button>
           <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center gap-1.5 px-6 py-2.5 rounded-[32px] transition-all duration-300 ${activeTab === 'settings' ? 'text-blue-500 bg-blue-500/10' : 'text-zinc-600 hover:text-zinc-400'}`}>
              <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-             <span className="text-[9px] font-black uppercase tracking-tighter">Settings</span>
+             <span className="text-[9px] font-black uppercase tracking-tighter">{t.settings}</span>
           </button>
         </div>
       </nav>
