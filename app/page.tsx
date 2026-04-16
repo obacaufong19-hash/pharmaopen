@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 
-// 1. Premium SVG Logo Component (Cross-Heart Hybrid)
+// 1. Premium SVG Logo Component
 const Logo = ({ isDarkMode }: { isDarkMode: boolean }) => (
   <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm">
@@ -18,7 +18,7 @@ const Logo = ({ isDarkMode }: { isDarkMode: boolean }) => (
   </div>
 );
 
-// 2. Skeleton Card Component for Loading States
+// 2. Skeleton Card Component
 const SkeletonCard = ({ isDarkMode }: { isDarkMode: boolean }) => (
   <div className={`p-5 rounded-[32px] flex items-center justify-between border animate-pulse ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white border-transparent shadow-sm'}`}>
     <div className="flex-1 pr-4 space-y-3">
@@ -68,13 +68,11 @@ export default function Home() {
     setMounted(true);
     if (typeof window !== 'undefined') {
       if (window.matchMedia('(prefers-color-scheme: dark)').matches) setIsDarkMode(true);
-      
       const handleScroll = () => {
         if (window.scrollY > lastScrollY.current && window.scrollY > 80) setShowHeader(false);
         else setShowHeader(true);
         lastScrollY.current = window.scrollY;
       };
-
       window.addEventListener('scroll', handleScroll);
       loadData();
       const timer = setInterval(() => setNow(new Date()), 60000);
@@ -88,7 +86,6 @@ export default function Home() {
   const getStatusData = (p: any) => {
     if (p.is_open === null || p.is_open === undefined) return { color: 'bg-zinc-400', label: 'Unknown', open: true };
     if (!p.is_open) return { color: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]', label: 'Closed', open: false };
-    
     if (p.closing_time) {
       try {
         const [h, m] = p.closing_time.split(':').map(Number);
@@ -114,9 +111,11 @@ export default function Home() {
   return (
     <div className={`${isDarkMode ? 'dark bg-[#09090b] text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen font-sans transition-colors duration-700 pb-10`}>
       
-      {/* HEADER SECTION */}
+      {/* 3. STICKY HEADER CONTAINER */}
       <div className={`sticky top-0 z-50 transition-all duration-500 ${showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
-        <div className={`${isDarkMode ? 'bg-[#09090b]/80 border-zinc-800/50' : 'bg-[#F2F2F7]/80 border-white/20'} backdrop-blur-2xl p-6 pb-4 border-b shadow-sm`}>
+        <div className={`${isDarkMode ? 'bg-[#09090b]/90 border-zinc-800/50' : 'bg-[#F2F2F7]/90 border-white/20'} backdrop-blur-2xl p-6 pb-4 border-b shadow-sm`}>
+          
+          {/* Logo & Controls */}
           <header className="mb-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <Logo isDarkMode={isDarkMode} />
@@ -128,7 +127,6 @@ export default function Home() {
               </div>
             </div>
             
-            {/* Control Set */}
             <div className="flex gap-3 items-center">
               <button 
                 onClick={loadData}
@@ -150,28 +148,25 @@ export default function Home() {
                 className={`relative w-14 h-8 rounded-full transition-all duration-500 p-1 border shadow-inner ${isDarkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-200 border-zinc-300'}`}
               >
                 <div className={`w-6 h-6 rounded-full shadow-lg flex items-center justify-center transition-all duration-500 transform ${isDarkMode ? 'translate-x-6 bg-zinc-950 text-blue-400' : 'translate-x-0 bg-white text-orange-500'}`}>
-                  {isDarkMode ? (
-                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-                  ) : (
-                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7a5 5 0 100 10 5 5 0 000-10zM2 13h2a1 1 0 100-2H2a1 1 0 100 2zm18 0h2a1 1 0 100-2h-2a1 1 0 100 2zM11 2v2a1 1 0 102 0V2a1 1 0 10-2 0zm0 18v2a1 1 0 102 0v-2a1 1 0 10-2 0zM5.99 4.58a1 1 0 111.41 1.41L6.34 7.05a1 1 0 11-1.41-1.41l1.06-1.06z"/></svg>
-                  )}
+                  {isDarkMode ? <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg> : <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7a5 5 0 100 10 5 5 0 000-10zM2 13h2a1 1 0 100-2H2a1 1 0 100 2zm18 0h2a1 1 0 100-2h-2a1 1 0 100 2zM11 2v2a1 1 0 102 0V2a1 1 0 10-2 0zm0 18v2a1 1 0 102 0v-2a1 1 0 10-2 0zM5.99 4.58a1 1 0 111.41 1.41L6.34 7.05a1 1 0 11-1.41-1.41l1.06-1.06z"/></svg>}
                 </div>
               </button>
             </div>
           </header>
 
           <div className="space-y-4">
-            <div className="relative group">
+            {/* PINNED SEARCH BAR */}
+            <div className={`sticky top-0 z-10 py-1 ${isDarkMode ? 'bg-[#09090b]/5' : 'bg-[#F2F2F7]/5'}`}>
               <input 
                 type="text" 
                 placeholder="Search pharmacies..." 
-                className={`w-full p-4 rounded-2xl border-none shadow-sm outline-none text-sm font-medium transition-all focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? 'bg-zinc-900/50 text-white placeholder:text-zinc-600' : 'bg-white text-black placeholder:text-gray-300'}`}
+                className={`w-full p-4 rounded-2xl border-none shadow-sm outline-none text-sm font-medium transition-all focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? 'bg-zinc-900/60 text-white placeholder:text-zinc-600' : 'bg-white text-black placeholder:text-gray-300'}`}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             
-            {/* REFINED CONTEXTUAL FILTERS */}
-            <div className="flex gap-2 overflow-x-auto no-scrollbar items-center pb-1 -mx-6 px-6">
+            {/* SCROLLABLE FILTERS (Underneath Search) */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar items-center pb-1 -mx-6 px-6 relative z-0">
               <button 
                 onClick={() => setShowOnlyOpen(!showOnlyOpen)}
                 className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 border
@@ -202,7 +197,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <div className="max-w-xl mx-auto p-6 -mt-4">
         <div className="grid gap-4">
           {isSyncing ? (
