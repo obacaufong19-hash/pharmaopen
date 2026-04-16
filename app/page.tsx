@@ -26,15 +26,21 @@ export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showHeader, setShowHeader] = useState(true);
+  const [isVisible, setIsVisible] = useState(false); // For staggered entry
   const [now, setNow] = useState(new Date());
   const lastScrollY = useRef(0);
 
   const loadData = async () => {
     setIsSyncing(true);
+    setIsVisible(false); // Reset visibility for animation
     try {
       const { supabase } = await import('./utils/supabase');
       const { data } = await supabase.from('pharmacies').select('*');
-      if (data) setList(data);
+      if (data) {
+        setList(data);
+        // Trigger staggered animation after data is set
+        setTimeout(() => setIsVisible(true), 100);
+      }
     } catch (err) { console.error("Sync failed"); }
     finally { setTimeout(() => setIsSyncing(false), 800); }
   };
@@ -78,6 +84,7 @@ export default function Home() {
   return (
     <div className={`${isDarkMode ? 'dark bg-zinc-950 text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen font-sans transition-colors duration-500 pb-10`}>
       
+      {/* Header logic remains the same */}
       <div className={`sticky top-0 z-50 transition-all duration-500 ${showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
         <div className={`${isDarkMode ? 'bg-zinc-950/80' : 'bg-[#F2F2F7]/80'} backdrop-blur-xl p-6 pb-4`}>
           <header className="mb-6 flex justify-between items-center">
@@ -102,14 +109,12 @@ export default function Home() {
           </header>
 
           <div className="space-y-4">
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="Find a pharmacy..." 
-                className={`w-full p-4 rounded-2xl border-none shadow-sm outline-none text-sm font-medium transition-all focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? 'bg-zinc-900/50 text-white placeholder:text-zinc-600' : 'bg-white text-black placeholder:text-gray-300'}`}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+            <input 
+              type="text" 
+              placeholder="Find a pharmacy..." 
+              className={`w-full p-4 rounded-2xl border-none shadow-sm outline-none text-sm font-medium transition-all focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? 'bg-zinc-900/50 text-white placeholder:text-zinc-600' : 'bg-white text-black placeholder:text-gray-300'}`}
+              onChange={(e) => setSearch(e.target.value)}
+            />
             <div className="flex gap-2 overflow-x-auto no-scrollbar">
               {['All', 'Suva', 'Lami', 'Navua'].map(loc => (
                 <button 
@@ -129,10 +134,21 @@ export default function Home() {
         <div className="grid gap-4">
           {list
             .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()) && (filter === 'All' || p.address?.toLowerCase().includes(filter.toLowerCase())))
-            .map((p) => {
+            .map((p, index) => {
               const status = getStatusData(p);
               return (
-                <div key={p.id} className={`p-5 rounded-[32px] flex items-center justify-between border transition-all hover:scale-[1.01] ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white border-transparent shadow-sm'}`}>
+                <div 
+                  key={p.id} 
+                  // STAGGERED ANIMATION CLASSES
+                  style={{ 
+                    transitionDelay: `${index * 50}ms`, // Each card waits slightly longer
+                  }}
+                  className={`p-5 rounded-[32px] flex items-center justify-between border transition-all duration-700 transform 
+                    ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}
+                    ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white border-transparent shadow-sm'}
+                    hover:scale-[1.01] active:scale-[0.98]
+                  `}
+                >
                   <div className="flex-1 pr-4">
                     <div className="flex items-center gap-3 mb-1">
                       <div className="relative flex h-2.5 w-2.5">
