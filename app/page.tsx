@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 
-// Premium Logo Component
+// 1. Premium Logo Component
 const Logo = ({ isDarkMode }: { isDarkMode: boolean }) => (
   <div className="relative w-10 h-10 flex items-center justify-center">
     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm">
@@ -18,7 +18,7 @@ const Logo = ({ isDarkMode }: { isDarkMode: boolean }) => (
   </div>
 );
 
-// Skeleton Card Component
+// 2. Skeleton Card Component for Loading States
 const SkeletonCard = ({ isDarkMode }: { isDarkMode: boolean }) => (
   <div className={`p-5 rounded-[32px] flex items-center justify-between border animate-pulse ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white border-transparent shadow-sm'}`}>
     <div className="flex-1 pr-4 space-y-3">
@@ -39,7 +39,7 @@ export default function Home() {
   const [showOnlyOpen, setShowOnlyOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(true); // Default to true for initial load
+  const [isSyncing, setIsSyncing] = useState(true);
   const [showHeader, setShowHeader] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
   const [now, setNow] = useState(new Date());
@@ -56,9 +56,9 @@ export default function Home() {
         setTimeout(() => {
           setIsVisible(true);
           setIsSyncing(false);
-        }, 600); // Artificial delay to let skeletons shine
+        }, 800); 
       }
-    } catch (err) { 
+    } catch (err) {
       console.error("Sync failed");
       setIsSyncing(false);
     }
@@ -68,11 +68,13 @@ export default function Home() {
     setMounted(true);
     if (typeof window !== 'undefined') {
       if (window.matchMedia('(prefers-color-scheme: dark)').matches) setIsDarkMode(true);
+      
       const handleScroll = () => {
         if (window.scrollY > lastScrollY.current && window.scrollY > 80) setShowHeader(false);
         else setShowHeader(true);
         lastScrollY.current = window.scrollY;
       };
+
       window.addEventListener('scroll', handleScroll);
       loadData();
       const timer = setInterval(() => setNow(new Date()), 60000);
@@ -84,8 +86,9 @@ export default function Home() {
   }, []);
 
   const getStatusData = (p: any) => {
-    if (p.is_open === null || p.is_open === undefined) return { color: 'bg-zinc-400', label: 'Unknown' };
+    if (p.is_open === null || p.is_open === undefined) return { color: 'bg-zinc-400', label: 'Unknown', open: true };
     if (!p.is_open) return { color: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]', label: 'Closed', open: false };
+    
     if (p.closing_time) {
       try {
         const [h, m] = p.closing_time.split(':').map(Number);
@@ -109,45 +112,65 @@ export default function Home() {
   });
 
   return (
-    <div className={`${isDarkMode ? 'dark bg-zinc-950 text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen font-sans transition-colors duration-500 pb-10`}>
+    <div className={`${isDarkMode ? 'dark bg-[#09090b] text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen font-sans transition-colors duration-700 pb-10`}>
       
+      {/* 3. Collapsible Glass Header */}
       <div className={`sticky top-0 z-50 transition-all duration-500 ${showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
-        <div className={`${isDarkMode ? 'bg-zinc-950/80' : 'bg-[#F2F2F7]/80'} backdrop-blur-xl p-6 pb-4`}>
+        <div className={`${isDarkMode ? 'bg-[#09090b]/80 border-zinc-800/50' : 'bg-[#F2F2F7]/80 border-white/20'} backdrop-blur-2xl p-6 pb-4 border-b`}>
           <header className="mb-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <Logo isDarkMode={isDarkMode} />
               <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-br from-blue-600 to-blue-400 bg-clip-text text-transparent">Bula Health</h1>
             </div>
             
-            <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 ${isDarkMode ? 'bg-zinc-900 border border-zinc-800' : 'bg-white shadow-sm'}`}>
-              <span className="text-sm">{isDarkMode ? '🌙' : '☀️'}</span>
-            </button>
+            <div className="flex gap-3 items-center">
+              <button 
+                onClick={loadData}
+                disabled={isSyncing}
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all active:scale-90 border shadow-sm ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}
+              >
+                {!isSyncing ? (
+                   <svg className={`w-5 h-5 ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                ) : (
+                  <svg className="w-6 h-6 animate-spin text-blue-500" viewBox="0 0 24 24">
+                    <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none"></circle>
+                    <path className="opacity-100" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+              </button>
+
+              <button 
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`relative w-14 h-8 rounded-full transition-all duration-500 p-1 border shadow-inner ${isDarkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-200 border-zinc-300'}`}
+              >
+                <div className={`w-6 h-6 rounded-full shadow-lg flex items-center justify-center transition-all duration-500 transform ${isDarkMode ? 'translate-x-6 bg-zinc-950 text-blue-400' : 'translate-x-0 bg-white text-orange-500'}`}>
+                  {isDarkMode ? <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg> : <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 7a5 5 0 100 10 5 5 0 000-10zM2 13h2a1 1 0 100-2H2a1 1 0 100 2zm18 0h2a1 1 0 100-2h-2a1 1 0 100 2zM11 2v2a1 1 0 102 0V2a1 1 0 10-2 0zm0 18v2a1 1 0 102 0v-2a1 1 0 10-2 0zM5.99 4.58a1 1 0 111.41 1.41L6.34 7.05a1 1 0 11-1.41-1.41l1.06-1.06z"/></svg>}
+                </div>
+              </button>
+            </div>
           </header>
 
           <div className="space-y-4">
             <input 
               type="text" 
-              placeholder="Search..." 
+              placeholder="Search pharmacies..." 
               className={`w-full p-4 rounded-2xl border-none shadow-sm outline-none text-sm font-medium ${isDarkMode ? 'bg-zinc-900/50 text-white placeholder:text-zinc-600' : 'bg-white text-black placeholder:text-gray-300'}`}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <div className="flex gap-2 overflow-x-auto no-scrollbar items-center">
-              {/* "Open Now" Chip */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar items-center pb-1">
               <button 
                 onClick={() => setShowOnlyOpen(!showOnlyOpen)}
-                className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${showOnlyOpen ? 'bg-green-500 text-white' : (isDarkMode ? 'bg-zinc-900 text-zinc-500 border border-zinc-800' : 'bg-white text-gray-400')}`}
+                className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${showOnlyOpen ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : (isDarkMode ? 'bg-zinc-900 text-zinc-500 border border-zinc-800' : 'bg-white text-gray-400 border border-transparent')}`}
               >
                 <div className={`w-1.5 h-1.5 rounded-full ${showOnlyOpen ? 'bg-white' : 'bg-green-500'}`} />
                 Open Now
               </button>
-
               <div className="w-[1px] h-4 bg-zinc-300 dark:bg-zinc-800 shrink-0 mx-1" />
-
               {['All', 'Suva', 'Lami', 'Navua'].map(loc => (
                 <button 
                   key={loc} 
                   onClick={() => setFilter(loc)}
-                  className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 ${filter === loc ? 'bg-blue-600 text-white shadow-lg' : (isDarkMode ? 'bg-zinc-900 text-zinc-500' : 'bg-white text-gray-400')}`}
+                  className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 ${filter === loc ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : (isDarkMode ? 'bg-zinc-900 text-zinc-500 border border-zinc-800' : 'bg-white text-gray-400 border border-transparent')}`}
                 >
                   {loc}
                 </button>
@@ -157,9 +180,9 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 4. Main List Content */}
       <div className="max-w-xl mx-auto p-6 -mt-4">
         <div className="grid gap-4">
-          {/* SKELETON STATE */}
           {isSyncing ? (
             [1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} isDarkMode={isDarkMode} />)
           ) : (
