@@ -175,19 +175,29 @@ function PharmacyAppContent() {
           <div className="grid gap-4">
             {isLoading ? <div className="text-center py-20 opacity-20 font-bold text-[10px] tracking-[0.3em] uppercase">{t.syncing}</div> : pharmacies.map((p: any) => (
               <div key={p.id} className={`p-6 rounded-[32px] border transition-all duration-300 ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white shadow-sm'}`}>
-                <div className="flex items-center gap-3 mb-1">
-                  <div className={`h-2 w-2 rounded-full animate-pulse ${p.is_open ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-red-500'}`} />
-                  <h2 className="text-lg font-bold tracking-[-0.02em]">{p.name}</h2>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <div className={`h-2 w-2 rounded-full animate-pulse ${p.is_open ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-red-500'}`} />
+                      <h2 className="text-lg font-bold tracking-[-0.02em]">{p.name}</h2>
+                    </div>
+                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.15em] ml-5 opacity-70">{p.address}</p>
+                  </div>
+                  <a href={`tel:${p.phone_number}`} className="w-10 h-10 rounded-full border border-blue-500/20 bg-blue-500/10 flex items-center justify-center text-blue-500 active:scale-90 transition-all">
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5c-1.242 0-2.25 1.008-2.25 2.25z"/></svg>
+                  </a>
                 </div>
-                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.15em] mb-5 ml-5 opacity-70">{p.address}</p>
                 
                 <div className="flex gap-2">
-                  <a href={`https://wa.me/${p.phone_number}`} className="flex-1 py-4 rounded-2xl bg-zinc-800/50 border border-zinc-800/50 flex justify-center items-center active:scale-95 transition-transform">
-                    <span className="text-[10px] font-black tracking-widest text-[#25D366] opacity-90">WHATSAPP</span>
+                  <a href={`https://wa.me/${p.phone_number}`} className="flex-1 py-4 rounded-2xl bg-zinc-800/30 border border-zinc-800/50 flex justify-center items-center active:scale-95 transition-transform">
+                     <svg className="w-5 h-5 fill-[#25D366]" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.025 3.107l-.696 2.54 2.595-.681a5.71 5.71 0 002.844.757h.001c3.181 0 5.766-2.586 5.767-5.766.001-3.18-2.585-5.766-5.766-5.766zm3.377 8.203c-.145.405-.837.739-1.166.786-.299.043-.687.07-1.104-.064-.242-.078-.544-.184-1.127-.435-1.135-.487-1.851-1.636-1.907-1.711-.056-.075-.461-.611-.461-1.166 0-.555.291-.827.394-.938.104-.111.225-.138.3-.138s.15.001.214.004c.067.003.157-.026.245.187.089.214.303.739.33.794s.045.111.015.172c-.03.06-.045.091-.09.143l-.135.158c-.044.053-.092.11-.039.202.053.092.235.388.504.628.345.308.636.403.726.447.09.045.142.038.195-.023.053-.06.225-.262.285-.353.06-.091.12-.076.202-.045s.526.248.616.293c.09.045.15.067.172.105.023.038.023.218-.122.623z"/></svg>
                   </a>
-                  <a href={`viber://add?number=${p.phone_number}`} className="flex-1 py-4 rounded-2xl bg-zinc-800/50 border border-zinc-800/50 flex justify-center items-center active:scale-95 transition-transform">
-                    <span className="text-[10px] font-black tracking-widest text-[#7360F2] opacity-90">VIBER</span>
+                  <a href={`viber://add?number=${p.phone_number}`} className="flex-1 py-4 rounded-2xl bg-zinc-800/30 border border-zinc-800/50 flex justify-center items-center active:scale-95 transition-transform">
+                     <svg className="w-5 h-5 fill-[#7360F2]" viewBox="0 0 24 24"><path d="M17.51 19.186c-4.14 0-7.497-3.357-7.497-7.497 0-1.107.243-2.157.676-3.1l-1.332-1.332C8.36 8.435 8.013 9.774 8.013 11.19c0 5.24 4.257 9.497 9.497 9.497 1.415 0 2.755-.347 3.933-.945l-1.332-1.332a7.464 7.464 0 01-3.1.676zM18 1c3.866 0 7 3.134 7 7s-3.134 7-7 7-7-3.134-7-7 3.134-7 7-7zm0 2c-2.761 0-5 2.239-5 5s2.239 5 5 5 5-2.239 5-5-2.239-5-5-5z"/></svg>
                   </a>
+                  <button className="flex-1 py-4 rounded-2xl bg-zinc-800/30 border border-zinc-800/50 flex justify-center items-center active:scale-95 transition-transform">
+                    <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  </button>
                 </div>
               </div>
             ))}
