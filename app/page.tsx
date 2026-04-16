@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 
-// Custom Premium Logo Component
+// Premium Logo Component
 const Logo = ({ isDarkMode }: { isDarkMode: boolean }) => (
   <div className="relative w-10 h-10 flex items-center justify-center">
     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm">
@@ -18,31 +18,50 @@ const Logo = ({ isDarkMode }: { isDarkMode: boolean }) => (
   </div>
 );
 
+// Skeleton Card Component
+const SkeletonCard = ({ isDarkMode }: { isDarkMode: boolean }) => (
+  <div className={`p-5 rounded-[32px] flex items-center justify-between border animate-pulse ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white border-transparent shadow-sm'}`}>
+    <div className="flex-1 pr-4 space-y-3">
+      <div className={`h-4 w-3/4 rounded-full ${isDarkMode ? 'bg-zinc-800' : 'bg-gray-100'}`} />
+      <div className={`h-3 w-1/2 rounded-full ${isDarkMode ? 'bg-zinc-800/50' : 'bg-gray-50'}`} />
+    </div>
+    <div className="flex gap-2">
+      <div className={`w-11 h-11 rounded-full ${isDarkMode ? 'bg-zinc-800' : 'bg-gray-100'}`} />
+      <div className={`w-11 h-11 rounded-full ${isDarkMode ? 'bg-zinc-800' : 'bg-gray-100'}`} />
+    </div>
+  </div>
+);
+
 export default function Home() {
   const [list, setList] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
+  const [showOnlyOpen, setShowOnlyOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(true); // Default to true for initial load
   const [showHeader, setShowHeader] = useState(true);
-  const [isVisible, setIsVisible] = useState(false); // For staggered entry
+  const [isVisible, setIsVisible] = useState(false);
   const [now, setNow] = useState(new Date());
   const lastScrollY = useRef(0);
 
   const loadData = async () => {
     setIsSyncing(true);
-    setIsVisible(false); // Reset visibility for animation
+    setIsVisible(false);
     try {
       const { supabase } = await import('./utils/supabase');
       const { data } = await supabase.from('pharmacies').select('*');
       if (data) {
         setList(data);
-        // Trigger staggered animation after data is set
-        setTimeout(() => setIsVisible(true), 100);
+        setTimeout(() => {
+          setIsVisible(true);
+          setIsSyncing(false);
+        }, 600); // Artificial delay to let skeletons shine
       }
-    } catch (err) { console.error("Sync failed"); }
-    finally { setTimeout(() => setIsSyncing(false), 800); }
+    } catch (err) { 
+      console.error("Sync failed");
+      setIsSyncing(false);
+    }
   };
 
   useEffect(() => {
@@ -66,61 +85,69 @@ export default function Home() {
 
   const getStatusData = (p: any) => {
     if (p.is_open === null || p.is_open === undefined) return { color: 'bg-zinc-400', label: 'Unknown' };
-    if (!p.is_open) return { color: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]', label: 'Closed' };
+    if (!p.is_open) return { color: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]', label: 'Closed', open: false };
     if (p.closing_time) {
       try {
         const [h, m] = p.closing_time.split(':').map(Number);
         const closeDate = new Date(now);
         closeDate.setHours(h, m, 0);
         const diff = (closeDate.getTime() - now.getTime()) / 60000;
-        if (diff > 0 && diff <= 60) return { color: 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]', label: 'Closing Soon' };
+        if (diff > 0 && diff <= 60) return { color: 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]', label: 'Closing Soon', open: true };
       } catch (e) {}
     }
-    return { color: 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]', label: 'Open' };
+    return { color: 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]', label: 'Open', open: true };
   };
 
   if (!mounted) return null;
 
+  const filteredItems = list.filter(p => {
+    const status = getStatusData(p);
+    const matchesSearch = p.name?.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = filter === 'All' || p.address?.toLowerCase().includes(filter.toLowerCase());
+    const matchesOpen = showOnlyOpen ? status.open : true;
+    return matchesSearch && matchesFilter && matchesOpen;
+  });
+
   return (
     <div className={`${isDarkMode ? 'dark bg-zinc-950 text-white' : 'bg-[#F2F2F7] text-black'} min-h-screen font-sans transition-colors duration-500 pb-10`}>
       
-      {/* Header logic remains the same */}
       <div className={`sticky top-0 z-50 transition-all duration-500 ${showHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
         <div className={`${isDarkMode ? 'bg-zinc-950/80' : 'bg-[#F2F2F7]/80'} backdrop-blur-xl p-6 pb-4`}>
           <header className="mb-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
               <Logo isDarkMode={isDarkMode} />
-              <div>
-                <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-br from-blue-600 to-blue-400 bg-clip-text text-transparent">
-                  Bula Health
-                </h1>
-                <div className="h-[2px] w-8 bg-blue-500/30 rounded-full mt-[-2px]" />
-              </div>
+              <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-br from-blue-600 to-blue-400 bg-clip-text text-transparent">Bula Health</h1>
             </div>
             
-            <div className="flex gap-2">
-              <button onClick={loadData} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 ${isDarkMode ? 'bg-zinc-900 border border-zinc-800' : 'bg-white shadow-sm'}`}>
-                <span className={`text-sm ${isSyncing ? 'animate-spin' : ''}`}>🔄</span>
-              </button>
-              <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 ${isDarkMode ? 'bg-zinc-900 border border-zinc-800' : 'bg-white shadow-sm'}`}>
-                <span className="text-sm">{isDarkMode ? '🌙' : '☀️'}</span>
-              </button>
-            </div>
+            <button onClick={() => setIsDarkMode(!isDarkMode)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 ${isDarkMode ? 'bg-zinc-900 border border-zinc-800' : 'bg-white shadow-sm'}`}>
+              <span className="text-sm">{isDarkMode ? '🌙' : '☀️'}</span>
+            </button>
           </header>
 
           <div className="space-y-4">
             <input 
               type="text" 
-              placeholder="Find a pharmacy..." 
-              className={`w-full p-4 rounded-2xl border-none shadow-sm outline-none text-sm font-medium transition-all focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? 'bg-zinc-900/50 text-white placeholder:text-zinc-600' : 'bg-white text-black placeholder:text-gray-300'}`}
+              placeholder="Search..." 
+              className={`w-full p-4 rounded-2xl border-none shadow-sm outline-none text-sm font-medium ${isDarkMode ? 'bg-zinc-900/50 text-white placeholder:text-zinc-600' : 'bg-white text-black placeholder:text-gray-300'}`}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar items-center">
+              {/* "Open Now" Chip */}
+              <button 
+                onClick={() => setShowOnlyOpen(!showOnlyOpen)}
+                className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 ${showOnlyOpen ? 'bg-green-500 text-white' : (isDarkMode ? 'bg-zinc-900 text-zinc-500 border border-zinc-800' : 'bg-white text-gray-400')}`}
+              >
+                <div className={`w-1.5 h-1.5 rounded-full ${showOnlyOpen ? 'bg-white' : 'bg-green-500'}`} />
+                Open Now
+              </button>
+
+              <div className="w-[1px] h-4 bg-zinc-300 dark:bg-zinc-800 shrink-0 mx-1" />
+
               {['All', 'Suva', 'Lami', 'Navua'].map(loc => (
                 <button 
                   key={loc} 
                   onClick={() => setFilter(loc)}
-                  className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${filter === loc ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : (isDarkMode ? 'bg-zinc-900 text-zinc-500' : 'bg-white text-gray-400')}`}
+                  className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 ${filter === loc ? 'bg-blue-600 text-white shadow-lg' : (isDarkMode ? 'bg-zinc-900 text-zinc-500' : 'bg-white text-gray-400')}`}
                 >
                   {loc}
                 </button>
@@ -132,17 +159,16 @@ export default function Home() {
 
       <div className="max-w-xl mx-auto p-6 -mt-4">
         <div className="grid gap-4">
-          {list
-            .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()) && (filter === 'All' || p.address?.toLowerCase().includes(filter.toLowerCase())))
-            .map((p, index) => {
+          {/* SKELETON STATE */}
+          {isSyncing ? (
+            [1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} isDarkMode={isDarkMode} />)
+          ) : (
+            filteredItems.map((p, index) => {
               const status = getStatusData(p);
               return (
                 <div 
                   key={p.id} 
-                  // STAGGERED ANIMATION CLASSES
-                  style={{ 
-                    transitionDelay: `${index * 50}ms`, // Each card waits slightly longer
-                  }}
+                  style={{ transitionDelay: `${index * 50}ms` }}
                   className={`p-5 rounded-[32px] flex items-center justify-between border transition-all duration-700 transform 
                     ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}
                     ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white border-transparent shadow-sm'}
@@ -170,7 +196,8 @@ export default function Home() {
                   </div>
                 </div>
               );
-            })}
+            })
+          )}
         </div>
       </div>
     </div>
