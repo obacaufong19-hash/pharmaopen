@@ -36,7 +36,7 @@ export default function Home() {
   const [list, setList] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState('pharmacy');
   const [showOnlyOpen, setShowOnlyOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -141,87 +141,98 @@ export default function Home() {
           </header>
 
           <div className="space-y-4">
-            <input 
-              type="text" 
-              placeholder="Search pharmacies..." 
-              className={`w-full p-4 rounded-2xl border-none shadow-sm outline-none text-sm font-medium transition-all focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? 'bg-zinc-900/60 text-white placeholder:text-zinc-600' : 'bg-white text-black placeholder:text-gray-300'}`}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <div className={`sticky top-0 z-10 py-1 ${isDarkMode ? 'bg-[#09090b]/5' : 'bg-[#F2F2F7]/5'}`}>
+              <input 
+                type="text" 
+                placeholder="Search pharmacies..." 
+                className={`w-full p-4 rounded-2xl border-none shadow-sm outline-none text-sm font-medium transition-all focus:ring-2 focus:ring-blue-500/20 ${isDarkMode ? 'bg-zinc-900/60 text-white placeholder:text-zinc-600' : 'bg-white text-black placeholder:text-gray-300'}`}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
             
-            <div className="flex gap-2 overflow-x-auto no-scrollbar items-center pb-1 -mx-6 px-6">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar items-center pb-1 -mx-6 px-6 relative z-0">
               <button 
                 onClick={() => setShowOnlyOpen(!showOnlyOpen)}
                 className={`px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-2 shrink-0 border
-                  ${showOnlyOpen ? 'bg-green-500 border-green-400 text-white' : (isDarkMode ? 'bg-zinc-900/50 border-zinc-800 text-zinc-500' : 'bg-white border-zinc-100 text-gray-400')}`}
+                  ${showOnlyOpen ? 'bg-green-500 border-green-400 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)]' : (isDarkMode ? 'bg-zinc-900/50 border-zinc-800 text-zinc-500' : 'bg-white border-zinc-100 text-gray-400 shadow-sm')}`}
               >
                 <div className={`w-1.5 h-1.5 rounded-full ${showOnlyOpen ? 'bg-white animate-pulse' : 'bg-green-500'}`} />
                 Open Now
               </button>
+              <div className="w-[1px] h-4 bg-zinc-300 dark:bg-zinc-800 shrink-0 mx-1" />
               {['All', 'Suva', 'Lami', 'Navua', 'Nasinu', 'Nausori'].map(loc => (
-                <button key={loc} onClick={() => setFilter(loc)} className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 border ${filter === loc ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20 scale-105' : (isDarkMode ? 'bg-zinc-900/50 border-zinc-800 text-zinc-500' : 'bg-white border-zinc-100 text-gray-400')}`}>{loc}</button>
+                <button key={loc} onClick={() => setFilter(loc)} className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 border ${filter === loc ? 'bg-blue-600 border-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)] scale-105' : (isDarkMode ? 'bg-zinc-900/50 border-zinc-800 text-zinc-500' : 'bg-white border-zinc-100 text-gray-400 shadow-sm')}`}>{loc}</button>
               ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* MAIN LIST */}
-      <div className="max-w-xl mx-auto p-6 -mt-4">
-        <div className="grid gap-4">
-          {isSyncing ? [1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} isDarkMode={isDarkMode} />) : 
-            filteredItems.map((p, index) => {
-              const status = getStatusData(p);
-              return (
-                <div key={p.id} style={{ transitionDelay: `${index * 50}ms` }} className={`p-5 rounded-[32px] flex items-center justify-between border transition-all duration-700 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'} ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white border-transparent shadow-sm'} hover:scale-[1.01] active:scale-[0.98]`}>
-                  <div className="flex-1 pr-4">
-                    <div className="flex items-center gap-3 mb-1">
-                      <div className={`h-2.5 w-2.5 rounded-full ${status.color}`} />
-                      <h2 className="text-[17px] font-bold leading-tight tracking-tight">{p.name}</h2>
+      {/* MAIN CONTENT AREA */}
+      <main className="max-w-xl mx-auto p-6 -mt-4">
+        {activeTab === 'pharmacy' ? (
+          <div className="grid gap-4">
+            {isSyncing ? [1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} isDarkMode={isDarkMode} />) : 
+              filteredItems.map((p, index) => {
+                const status = getStatusData(p);
+                return (
+                  <div key={p.id} style={{ transitionDelay: `${index * 50}ms` }} className={`p-5 rounded-[32px] flex items-center justify-between border transition-all duration-700 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'} ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800/50' : 'bg-white border-transparent shadow-sm'} hover:scale-[1.01] active:scale-[0.98]`}>
+                    <div className="flex-1 pr-4">
+                      <div className="flex items-center gap-3 mb-1">
+                        <div className={`h-2.5 w-2.5 rounded-full ${status.color}`} />
+                        <h2 className="text-[17px] font-bold leading-tight tracking-tight">{p.name}</h2>
+                      </div>
+                      <p className={`${isDarkMode ? 'text-zinc-500' : 'text-gray-400'} text-[11px] font-bold uppercase tracking-wide`}>{status.label} • {p.address}</p>
                     </div>
-                    <p className={`${isDarkMode ? 'text-zinc-500' : 'text-gray-400'} text-[11px] font-bold uppercase tracking-wide`}>{status.label} • {p.address}</p>
+                    <div className="flex gap-2">
+                      <a href={`tel:${p.phone_number}`} className={`w-11 h-11 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-blue-50 text-blue-600'}`}>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                      </a>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <a href={`tel:${p.phone_number}`} className={`w-11 h-11 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-blue-50 text-blue-600'}`}>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                    </a>
-                  </div>
-                </div>
-              );
-            })
-          }
-        </div>
-      </div>
-
-      {/* 4. PREMIUM NAVIGATION BAR */}
-      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
-        <div className={`${isDarkMode ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white/80 border-white'} backdrop-blur-2xl rounded-[32px] border p-2 shadow-2xl flex items-center justify-around overflow-hidden`}>
-          
-          {/* Nav Item: Home */}
-          <button onClick={() => setActiveTab('home')} className={`relative flex flex-col items-center gap-1 p-3 transition-all duration-300 ${activeTab === 'home' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-600' : 'text-zinc-400')}`}>
-            {activeTab === 'home' && <div className="absolute inset-0 bg-blue-500/10 rounded-2xl scale-75 blur-sm" />}
-            <svg className="w-6 h-6" fill={activeTab === 'home' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            <span className="text-[10px] font-black uppercase tracking-tighter">Health</span>
-          </button>
-
-          {/* Nav Item: Logistics (Future Placeholder) */}
-          <button onClick={() => setActiveTab('vonu')} className={`relative flex flex-col items-center gap-1 p-3 transition-all duration-300 ${activeTab === 'vonu' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-600' : 'text-zinc-400')}`}>
-            <svg className="w-6 h-6" fill={activeTab === 'vonu' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
-            <span className="text-[10px] font-black uppercase tracking-tighter">Logistics</span>
-          </button>
-
-          {/* Nav Item: Agri-Link (Future Placeholder) */}
-          <button onClick={() => setActiveTab('agri')} className={`relative flex flex-col items-center gap-1 p-3 transition-all duration-300 ${activeTab === 'agri' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-600' : 'text-zinc-400')}`}>
-            <svg className="w-6 h-6" fill={activeTab === 'agri' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-            <span className="text-[10px] font-black uppercase tracking-tighter">Agri-Link</span>
-          </button>
-
-          {/* Nav Item: More/Profile */}
-          <button onClick={() => setActiveTab('more')} className={`relative flex flex-col items-center gap-1 p-3 transition-all duration-300 ${activeTab === 'more' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-600' : 'text-zinc-400')}`}>
-            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${activeTab === 'more' ? 'border-blue-500' : 'border-zinc-400 dark:border-zinc-600'}`}>
-              <div className={`w-3 h-3 rounded-full ${activeTab === 'more' ? 'bg-blue-500' : 'bg-zinc-400 dark:bg-zinc-600'}`} />
+                );
+              })
+            }
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-50">
+            <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center">
+               <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-tighter">More</span>
+            <p className="text-sm font-bold uppercase tracking-widest">{activeTab} Services Coming Soon</p>
+          </div>
+        )}
+      </main>
+
+      {/* 4. REFINED HEALTHCARE NAVIGATION BAR */}
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
+        <div className={`${isDarkMode ? 'bg-zinc-900/80 border-zinc-800' : 'bg-white/80 border-white'} backdrop-blur-2xl rounded-[32px] border p-2 shadow-2xl flex items-center justify-around`}>
+          
+          {/* Pharmacy Tab */}
+          <button onClick={() => setActiveTab('pharmacy')} className={`relative flex flex-col items-center gap-1 p-3 transition-all duration-300 ${activeTab === 'pharmacy' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-600' : 'text-zinc-400')}`}>
+            {activeTab === 'pharmacy' && <div className="absolute inset-0 bg-blue-500/10 rounded-2xl scale-75 blur-sm" />}
+            <svg className="w-6 h-6" fill={activeTab === 'pharmacy' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a2 2 0 00-1.96 1.414l-.503 1.508a2 2 0 01-1.185 1.253l-3.328 1.109a2 2 0 01-1.63-.122L5.43 17.58a2 2 0 00-2.311.166l-1.045.836a2 2 0 00-.733 1.947l.477 2.387a2 2 0 001.414 1.96l1.508.503a2 2 0 011.253 1.185l1.109 3.328a2 2 0 01-.122 1.63L7.42 32.57a2 2 0 00.166 2.311l.836 1.045a2 2 0 001.947.733l2.387-.477a2 2 0 001.96-1.414l.503-1.508a2 2 0 011.185-1.253l3.328-1.109a2 2 0 011.63.122l1.982 1.189a2 2 0 002.311-.166l1.045-.836a2 2 0 00.733-1.947l-.477-2.387a2 2 0 00-1.414-1.96l-1.508-.503a2 2 0 01-1.253-1.185l-1.109-3.328a2 2 0 01.122-1.63l1.189-1.982a2 2 0 00-.166-2.311l-.836-1.045z"/></svg>
+            <span className="text-[10px] font-black uppercase tracking-tighter">Pharmacy</span>
           </button>
+
+          {/* Hospitals Tab */}
+          <button onClick={() => setActiveTab('hospitals')} className={`relative flex flex-col items-center gap-1 p-3 transition-all duration-300 ${activeTab === 'hospitals' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-600' : 'text-zinc-400')}`}>
+            <svg className="w-6 h-6" fill={activeTab === 'hospitals' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <span className="text-[10px] font-black uppercase tracking-tighter">Hospitals</span>
+          </button>
+
+          {/* Emergency Tab */}
+          <button onClick={() => setActiveTab('emergency')} className={`relative flex flex-col items-center gap-1 p-3 transition-all duration-300 ${activeTab === 'emergency' ? 'text-red-500' : (isDarkMode ? 'text-zinc-600' : 'text-zinc-400')}`}>
+            <svg className="w-6 h-6" fill={activeTab === 'emergency' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <span className="text-[10px] font-black uppercase tracking-tighter">Emergency</span>
+          </button>
+
+          {/* Med-Pass Tab */}
+          <button onClick={() => setActiveTab('medpass')} className={`relative flex flex-col items-center gap-1 p-3 transition-all duration-300 ${activeTab === 'medpass' ? 'text-blue-500' : (isDarkMode ? 'text-zinc-600' : 'text-zinc-400')}`}>
+            <svg className="w-6 h-6" fill={activeTab === 'medpass' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span className="text-[10px] font-black uppercase tracking-tighter">Med-Pass</span>
+          </button>
+
         </div>
       </nav>
     </div>
