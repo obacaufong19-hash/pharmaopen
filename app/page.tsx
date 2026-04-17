@@ -16,10 +16,8 @@ const getClosingCountdown = (closingTimeStr: string) => {
   const [hours, minutes] = closingTimeStr.split(':').map(Number);
   const closingDate = new Date();
   closingDate.setHours(hours, minutes, 0);
-
   const diffMs = closingDate.getTime() - now.getTime();
   const diffMins = Math.round(diffMs / 60000);
-  
   return (diffMins > 0 && diffMins <= 60) ? diffMins : null;
 };
 
@@ -31,14 +29,9 @@ const StatusLight = ({ color, blink = false }: { color: string, blink?: boolean 
     orange: 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.9)]',
     red: 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]'
   };
-
   return (
     <div className="relative flex items-center justify-center w-4 h-4">
-      {/* Outer Glow Ring (Blinking) */}
-      {blink && (
-        <div className={`absolute inset-0 rounded-full opacity-40 animate-ping ${color === 'orange' ? 'bg-orange-400' : 'bg-green-400'}`} />
-      )}
-      {/* Main Status Orb */}
+      {blink && <div className={`absolute inset-0 rounded-full opacity-40 animate-ping ${color === 'orange' ? 'bg-orange-400' : 'bg-green-400'}`} />}
       <div className={`h-2.5 w-2.5 rounded-full z-10 ${colorClasses[color]} ${blink ? 'animate-pulse' : ''}`} />
     </div>
   );
@@ -46,7 +39,6 @@ const StatusLight = ({ color, blink = false }: { color: string, blink?: boolean 
 
 const CountdownStatus = ({ closingTime, isOpen }: { closingTime: string, isOpen: boolean }) => {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-
   useEffect(() => {
     const update = () => setTimeLeft(getClosingCountdown(closingTime));
     update();
@@ -60,16 +52,12 @@ const CountdownStatus = ({ closingTime, isOpen }: { closingTime: string, isOpen:
       <span className="text-[10px] font-black text-red-500 uppercase tracking-tighter">Closed</span>
     </div>
   );
-  
-  if (timeLeft !== null) {
-    return (
-      <div className="flex items-center gap-3">
-        <StatusLight color="orange" blink={true} />
-        <span className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-tighter">Closing in {timeLeft}m</span>
-      </div>
-    );
-  }
-
+  if (timeLeft !== null) return (
+    <div className="flex items-center gap-3">
+      <StatusLight color="orange" blink={true} />
+      <span className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-tighter">Closing in {timeLeft}m</span>
+    </div>
+  );
   return (
     <div className="flex items-center gap-3">
       <StatusLight color="green" blink={true} />
@@ -84,19 +72,39 @@ function PharmacyAppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('All');
   
+  // NEW: Scroll state for Navigation
+  const [showNav, setShowNav] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        setShowNav(false); // Scrolling down - hide
+      } else {
+        setShowNav(true); // Scrolling up - show
+      }
+      lastScrollY.current = currentScrollY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const { data: pharmacies = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ['pharmacies'],
     queryFn: async () => {
       const { supabase } = await import('./utils/supabase');
-      const { data, error } = await supabase.from('pharmacies').select('*');
+      const { data, error } = await supabase.from('pharmacies').select('*').order('name', { ascending: true });
       if (error) throw error;
       return data;
     },
   });
 
   const handleGetDirections = (address: string) => {
-    const query = encodeURIComponent(`${address}, Fiji`);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+    // This specific URL format triggers "Directions from My Location"
+    const destination = encodeURIComponent(`${address}, Fiji`);
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
+    window.open(mapsUrl, '_blank');
   };
 
   const filteredPharmacies = pharmacies.filter((p: any) => {
@@ -106,7 +114,7 @@ function PharmacyAppContent() {
   });
 
   return (
-    <div className={`${isDarkMode ? 'dark bg-[#0b0b0d] text-white' : 'bg-[#f4f4f9] text-black'} min-h-screen transition-colors duration-500 pb-40 font-sans`}>
+    <div className={`${isDarkMode ? 'dark bg-[#0b0b0d] text-white' : 'bg-[#f4f4f9] text-black'} min-h-screen transition-colors duration-500 pb-20 font-sans`}>
       
       {/* HEADER */}
       <div className="sticky top-0 z-50">
@@ -173,6 +181,7 @@ function PharmacyAppContent() {
                     className={`flex-1 py-4 rounded-[20px] border flex justify-center items-center active:scale-95 transition-all ${isDarkMode ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-zinc-100 border-zinc-200 text-zinc-600 shadow-sm'}`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span className="ml-2 text-[10px] font-black uppercase tracking-tight">Directions</span>
                   </button>
                 </div>
               </div>
@@ -183,9 +192,13 @@ function PharmacyAppContent() {
         )}
       </main>
 
-      {/* NAVIGATION */}
-      <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 w-[92%] max-w-lg z-[100]">
-        <div className={`${isDarkMode ? 'bg-zinc-900/90 border-zinc-800' : 'bg-white/90 border-white'} backdrop-blur-3xl rounded-[40px] border p-2.5 flex items-center justify-around shadow-2xl`}>
+      {/* INTELLIGENT NAVIGATION BAR */}
+      <nav 
+        className={`fixed bottom-10 left-1/2 -translate-x-1/2 w-[92%] max-w-lg z-[100] transition-all duration-500 ease-in-out ${
+          showNav ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'
+        }`}
+      >
+        <div className={`${isDarkMode ? 'bg-zinc-900/90 border-zinc-800' : 'bg-white/95 border-white'} backdrop-blur-3xl rounded-[40px] border p-2.5 flex items-center justify-around shadow-2xl`}>
           {['pharmacy', 'emergency', 'pro'].map((tab) => (
             <button 
               key={tab} 
