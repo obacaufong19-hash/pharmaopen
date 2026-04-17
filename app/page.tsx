@@ -21,7 +21,6 @@ const triggerHaptic = (pattern = 10) => {
 
 const StatusLight = ({ color, blink = false, isDarkMode }: { color: string, blink?: boolean, isDarkMode: boolean }) => {
   const colorClasses: any = {
-    // Premium glow for dark mode, tighter focus for light mode
     green: isDarkMode ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.8)]' : 'bg-green-500 border border-green-600',
     orange: isDarkMode ? 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.9)]' : 'bg-orange-500 border border-orange-600',
     red: isDarkMode ? 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]' : 'bg-red-500 border border-red-600'
@@ -33,7 +32,7 @@ const StatusLight = ({ color, blink = false, isDarkMode }: { color: string, blin
         <motion.div 
           initial={{ scale: 1, opacity: 0.6 }}
           animate={{ scale: isDarkMode ? 2 : 1.6, opacity: 0 }}
-          transition={{ repeat: Infinity, duration: isDarkMode ? 1.5 : 1.2 }}
+          transition={{ repeat: Infinity, duration: 1.5 }}
           className={`absolute inset-0 rounded-full ${color === 'orange' ? 'bg-orange-400' : 'bg-green-400'}`}
         />
       )}
@@ -44,7 +43,7 @@ const StatusLight = ({ color, blink = false, isDarkMode }: { color: string, blin
 
 function PharmacyAppContent() {
   const [activeTab, setActiveTab] = useState('pharmacy');
-  const [isDarkMode, setIsDarkMode] = useState(true); // Starting with Dark Mode
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [lang, setLang] = useState('ENG');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('All');
@@ -87,19 +86,47 @@ function PharmacyAppContent() {
     return matchesSearch && matchesLocation && matchesFreeMeds;
   });
 
+  // Animation variants for the container to prevent "shaky" layout jumps
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05, // Smooth entrance ripple
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.98 },
+    show: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: {
+        type: "spring",
+        damping: 25,
+        stiffness: 400
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.95, 
+      transition: { duration: 0.2 } 
+    }
+  };
+
   return (
-    // Premium off-white base for light mode
     <div className={`${isDarkMode ? 'dark bg-[#0b0b0d] text-white' : 'bg-[#f6f6fb] text-black'} min-h-screen transition-colors duration-500 pb-40 font-sans`}>
       
       {/* HEADER SECTION */}
       <div className="sticky top-0 z-50">
-        {/* Soft blur for light mode */}
-        <motion.div className={`${isDarkMode ? 'bg-[#0b0b0d]/90 border-zinc-800' : 'bg-[#f6f6fb]/80 border-white/40'} backdrop-blur-3xl p-6 border-b`}>
+        <div className={`${isDarkMode ? 'bg-[#0b0b0d]/90 border-zinc-800' : 'bg-[#f6f6fb]/80 border-white/40'} backdrop-blur-3xl p-6 border-b`}>
           <header className="flex justify-between items-center mb-6 gap-3">
             <h1 className="text-xl font-black tracking-tighter text-blue-600 dark:text-blue-500">Bula Health</h1>
             
             <div className="flex-1 flex gap-2 justify-end">
-              {/* Premium Language Switcher */}
               <div className={`flex rounded-full p-1 border ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200 shadow-inner'}`}>
                 {['ENG', 'TAU', 'HIN'].map((l) => (
                   <button key={l} onClick={() => setLang(l)} className={`px-2 py-0.5 rounded-full text-[8px] font-bold ${lang === l ? 'bg-blue-600 text-white' : 'text-zinc-500'}`}>{l}</button>
@@ -127,15 +154,26 @@ function PharmacyAppContent() {
               <span className="text-[10px] font-black uppercase tracking-tighter">Free Meds</span>
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       <main className="max-w-xl mx-auto p-6 pt-10">
-        <motion.div layout className="grid gap-6">
+        {/* The layout prop here is the secret to fixing shakiness */}
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          layout
+          className="grid gap-6"
+        >
           <AnimatePresence mode="popLayout">
             {filteredPharmacies.map((p: any) => (
-              // Premium White cards on off-white base for light mode
-              <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={p.id} className={`p-7 rounded-[40px] border transition-all ${isDarkMode ? 'border-zinc-800/50 bg-zinc-900/40 shadow-2xl' : 'border-zinc-100/40 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)]'}`}>
+              <motion.div 
+                layout // Smoothly slide into place when list changes
+                variants={cardVariants}
+                key={p.id} 
+                className={`p-7 rounded-[40px] border transition-colors duration-300 ${isDarkMode ? 'border-zinc-800/50 bg-zinc-900/40 shadow-2xl' : 'border-zinc-100/40 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)]'}`}
+              >
                 <div className="flex justify-between items-start mb-8 gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -150,15 +188,14 @@ function PharmacyAppContent() {
                   </a>
                 </div>
                 
-                {/* Premium Inset Buttons for Light Mode */}
                 <div className="grid grid-cols-3 gap-3">
-                  <a href={`https://wa.me/${p.phone_number?.replace(/\s/g, '')}`} className={`py-4 rounded-[20px] border flex justify-center items-center ${isDarkMode ? 'bg-zinc-800/40 border-zinc-700' : 'bg-white border-zinc-200 shadow-inner'}`}>
+                  <a href={`https://wa.me/${p.phone_number?.replace(/\s/g, '')}`} className={`py-4 rounded-[20px] border flex justify-center items-center transition-all ${isDarkMode ? 'bg-zinc-800/40 border-zinc-700 active:bg-zinc-700' : 'bg-white border-zinc-200 shadow-inner active:bg-zinc-50'}`}>
                     <svg className="w-4.5 h-4.5 fill-green-600" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.246 2.248 3.484 5.232 3.484 8.402-.003 6.557-5.338 11.892-11.893 11.892-1.992-.001-3.951-.5-5.688-1.448l-6.309 1.656zm6.29-4.467c1.489.881 3.153 1.345 4.856 1.346h.005c5.42 0 9.832-4.412 9.835-9.832.001-2.625-1.022-5.093-2.882-6.954-1.859-1.86-4.327-2.883-6.954-2.883-5.42 0-9.831 4.412-9.835 9.832-.001 1.761.469 3.483 1.359 4.987l-1.021 3.725 3.812-.999z"/></svg>
                   </a>
-                  <button className={`py-4 rounded-[20px] border flex justify-center items-center ${isDarkMode ? 'bg-zinc-800/40 border-zinc-700' : 'bg-white border-zinc-200 shadow-inner'}`}>
+                  <button className={`py-4 rounded-[20px] border flex justify-center items-center transition-all ${isDarkMode ? 'bg-zinc-800/40 border-zinc-700 active:bg-zinc-700' : 'bg-white border-zinc-200 shadow-inner active:bg-zinc-50'}`}>
                     <div className="w-4.5 h-4.5 rounded-full border-2 border-purple-500 flex items-center justify-center text-[8.5px] font-black text-purple-500">V</div>
                   </button>
-                  <button onClick={() => handleGetDirections(p.address)} className={`py-4 rounded-[20px] border flex justify-center items-center ${isDarkMode ? 'bg-zinc-800 text-zinc-300 border-zinc-700' : 'bg-white border-zinc-200 shadow-inner text-zinc-600'}`}>
+                  <button onClick={() => handleGetDirections(p.address)} className={`py-4 rounded-[20px] border flex justify-center items-center transition-all ${isDarkMode ? 'bg-zinc-800 text-zinc-300 border-zinc-700 active:bg-zinc-700' : 'bg-white border-zinc-200 shadow-inner text-zinc-600 active:bg-zinc-50'}`}>
                     <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                   </button>
                 </div>
@@ -170,10 +207,19 @@ function PharmacyAppContent() {
 
       <AnimatePresence>
         {showNav && (
-          <motion.nav initial={{ y: 100, x: '-50%' }} animate={{ y: 0, x: '-50%' }} exit={{ y: 100, x: '-50%' }} className="fixed bottom-10 left-1/2 w-[92%] max-w-lg z-[100]">
+          <motion.nav 
+            initial={{ y: 100, x: '-50%' }} 
+            animate={{ y: 0, x: '-50%' }} 
+            exit={{ y: 100, x: '-50%' }} 
+            className="fixed bottom-10 left-1/2 w-[92%] max-w-lg z-[100]"
+          >
             <div className={`${isDarkMode ? 'bg-zinc-900/95 border-zinc-800 shadow-2xl' : 'bg-white/95 border-white shadow-[0_20px_50px_rgba(0,0,0,0.12)]'} backdrop-blur-3xl rounded-[44px] border p-2.5 flex items-center justify-around`}>
               {['pharmacy', 'map', 'sos', 'pro'].map((tab) => (
-                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex flex-col items-center gap-1.5 px-6 py-3 rounded-[32px] transition-all ${activeTab === tab ? 'bg-blue-600/10 text-blue-500 shadow-inner' : 'text-zinc-500'}`}>
+                <button 
+                  key={tab} 
+                  onClick={() => { triggerHaptic(5); setActiveTab(tab); }} 
+                  className={`flex flex-col items-center gap-1.5 px-6 py-3 rounded-[32px] transition-all ${activeTab === tab ? 'bg-blue-600/10 text-blue-500 shadow-inner' : 'text-zinc-500'}`}
+                >
                   <span className="text-[10px] font-black uppercase tracking-widest">{tab}</span>
                 </button>
               ))}
