@@ -5,7 +5,7 @@ import {
   QueryClientProvider, 
   useQuery, 
 } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 const queryClient = new QueryClient();
 
@@ -20,7 +20,7 @@ const triggerHaptic = (pattern = 10) => {
 // --- COMPONENTS ---
 
 const StatusLight = ({ color, blink = false, isDarkMode }: { color: string, blink?: boolean, isDarkMode: boolean }) => {
-  const colorClasses: any = {
+  const colorClasses: Record<string, string> = {
     green: isDarkMode ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.8)]' : 'bg-green-500 border border-green-600',
     orange: isDarkMode ? 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.9)]' : 'bg-orange-500 border border-orange-600',
     red: isDarkMode ? 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]' : 'bg-red-500 border border-red-600'
@@ -86,19 +86,19 @@ function PharmacyAppContent() {
     return matchesSearch && matchesLocation && matchesFreeMeds;
   });
 
-  // Animation variants for the container to prevent "shaky" layout jumps
-  const containerVariants = {
+  // Explicitly typed variants to fix the TypeScript Build Error
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.05, // Smooth entrance ripple
+        staggerChildren: 0.05,
         delayChildren: 0.1
       }
     }
   };
 
-  const cardVariants = {
+  const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20, scale: 0.98 },
     show: { 
       opacity: 1, 
@@ -158,7 +158,6 @@ function PharmacyAppContent() {
       </div>
 
       <main className="max-w-xl mx-auto p-6 pt-10">
-        {/* The layout prop here is the secret to fixing shakiness */}
         <motion.div 
           variants={containerVariants}
           initial="hidden"
@@ -169,7 +168,7 @@ function PharmacyAppContent() {
           <AnimatePresence mode="popLayout">
             {filteredPharmacies.map((p: any) => (
               <motion.div 
-                layout // Smoothly slide into place when list changes
+                layout
                 variants={cardVariants}
                 key={p.id} 
                 className={`p-7 rounded-[40px] border transition-colors duration-300 ${isDarkMode ? 'border-zinc-800/50 bg-zinc-900/40 shadow-2xl' : 'border-zinc-100/40 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)]'}`}
