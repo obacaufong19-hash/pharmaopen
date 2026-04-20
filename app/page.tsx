@@ -5,12 +5,15 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 const queryClient = new QueryClient();
 
-// Animation Variants to fix the Type Error
+// Animation Variants (Fixes type errors)
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", damping: 20 } }
+  show: { opacity: 1, y: 0, transition: { type: "spring", damping: 25, stiffness: 400 } }
 };
 
+// --- COMPONENTS ---
+
+// Premium Branded Splash Screen
 const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
   useEffect(() => {
     const timer = setTimeout(onComplete, 2200);
@@ -18,11 +21,11 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
   }, [onComplete]);
 
   return (
-    <motion.div exit={{ opacity: 0 }} className="fixed inset-0 z-[1000] bg-[#0b0b0d] flex flex-col items-center justify-center">
-      <div className="w-24 h-24 bg-blue-600 rounded-[32px] flex items-center justify-center text-4xl mb-8">🇫🇯</div>
-      <h1 className="text-3xl font-black text-white">Bula Health</h1>
-      <div className="mt-12 w-32 h-1 bg-zinc-800 rounded-full overflow-hidden">
-        <motion.div className="h-full bg-blue-500" animate={{ width: ['0%', '100%'] }} transition={{ duration: 1.8 }} />
+    <motion.div exit={{ opacity: 0 }} className="fixed inset-0 z-[1000] bg-[#0b0b0d] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-24 h-24 bg-blue-600 rounded-[32px] flex items-center justify-center text-4xl shadow-2xl shadow-blue-500/40 mb-8">🇫🇯</div>
+      <h1 className="text-3xl font-black text-white tracking-tighter">Bula Health</h1>
+      <div className="mt-12 w-48 h-1 bg-zinc-800 rounded-full overflow-hidden">
+        <motion.div className="h-full bg-blue-500" animate={{ width: ['0%', '100%'] }} transition={{ duration: 1.8, ease: "easeInOut" }} />
       </div>
     </motion.div>
   );
@@ -51,9 +54,7 @@ function PharmacyAppContent() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-xl mx-auto p-6 pb-40">
           <header className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-black text-blue-600">Bula Health</h1>
-            <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-3 rounded-2xl bg-zinc-800/50">
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
+            <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-3 rounded-2xl bg-zinc-800/50">{isDarkMode ? '☀️' : '🌙'}</button>
           </header>
 
           {activeTab === 'directory' ? (
@@ -77,12 +78,12 @@ function PharmacyAppContent() {
           ) : (
             <div className="text-center py-20 space-y-6">
               <h2 className="text-2xl font-black">About Bula Health</h2>
-              <p className="opacity-60 text-sm">Version 1.0.5 | Connecting Fiji Pharmacies</p>
-              <a href="mailto:admin@fijipharmacy.com" className="block p-4 bg-blue-600 rounded-2xl text-white font-bold">Contact Developer</a>
+              <p className="opacity-60 text-sm">Version 1.0.5 | Built for Fiji Pharmacies</p>
+              <a href="mailto:admin@bulahealth.com" className="block p-4 bg-blue-600 rounded-2xl text-white font-bold">Contact Developer</a>
             </div>
           )}
 
-          <nav className="fixed bottom-10 left-6 right-6 bg-zinc-900 rounded-[44px] p-2 flex">
+          <nav className="fixed bottom-10 left-6 right-6 bg-zinc-900 rounded-[44px] p-2 flex border border-zinc-800 shadow-2xl">
             <button onClick={() => setActiveTab('directory')} className={`flex-1 py-3 ${activeTab === 'directory' ? 'bg-blue-600' : ''} rounded-[32px] text-[10px] font-black transition-all`}>DIRECTORY</button>
             <button onClick={() => setActiveTab('about')} className={`flex-1 py-3 ${activeTab === 'about' ? 'bg-blue-600' : ''} rounded-[32px] text-[10px] font-black transition-all`}>ABOUT</button>
           </nav>
